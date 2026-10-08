@@ -68,49 +68,34 @@ def inbox(user: str, password: str) -> list[email.message.Message]:
         return out
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--timeout", type=float, default=1500)
-    parser.add_argument("--master-key", default="sk-compose")
-    args = parser.parse_args()
-    http = httpx.Client(timeout=60)
+def picked_up() -> bool:
+    """The IMAP trigger marks a message as read as soon as it fetches it."""
+    with imaplib.IMAP4(MAIL_HOST, 3143) as imap:
+        imap.login("support", "support")
+        imap.select("INBOX")
+        _, unseen = imap.search(None, "UNSEEN")
+        _, everything = imap.search(None, "ALL")
+    return bool(everything[0].split()) and not unseen[0].split()
 
-    subject = "UDX compilation fails: argument list too long"
-    send_email(subject, QUESTION)
-    print("sent the customer email")
 
-    def pending() -> list[dict[str, Any]]:
-        cases: list[dict[str, Any]] = http.get(f"{SERVICE}/cases?status=pending").json()
-        return [c for c in cases if c["subject"] == subject]
+def deliver(subject: str) -> None:
+    """Send the customer email; resend if n8n has not fetched it within a minute.
 
-    case = wait_for("n8n delivered the email and a case is pending", pending, args.timeout)[0]
-    case = http.get(f"{SERVICE}/cases/{case['id']}").json()
-    proposal = case["proposal"]
-    print("routing:", proposal["routing"]["llm"]["queue"], "| gate:", proposal["gate"])
-    print("draft:", proposal["draft"]["reply"][:300])
-    assert proposal["evidence"], "no knowledge-base evidence retrieved"
-    assert proposal["draft"]["answerable"], "the draft declined a question the KB answers"
+    The trigger ignores mail that arrived before it connected.
+    """
+    for attempt in range(3):
+        send_email(subject, QUESTION)
+        print(f"sent the customer email (attempt {attempt + 1})")
+        try:
+            wait_for("n8n fetched the email", picked_up, 60)
+            return
+        except TimeoutError:
+            if attempt == 2:
+                raise
 
-    r = http.post(
-        f"{SERVICE}/cases/{case['id']}/decision", json={"reviewer": "smoke", "action": "approve"}
-    )
-    r.raise_for_status()
-    assert r.json()["workflow_resumed"], "the n8n workflow was not resumed"
 
-    def reply() -> list[email.message.Message]:
-        return [m for m in inbox("customer", "customer") if m["Subject"] == f"Re: {subject}"]
-
-    msg = wait_for("the approved reply reached the customer's mailbox", reply, 300)[0]
-    body = msg.get_payload(decode=True)
-    text = body.decode(errors="replace") if isinstance(body, bytes) else str(msg.get_payload())
-    assert proposal["draft"]["reply"][:40] in text, "the sent text is not the approved draft"
-    wait_for(
-        "the case is marked sent",
-        lambda: http.get(f"{SERVICE}/cases/{case['id']}").json()["status"] == "sent",
-        120,
-    )
-
-    headers = {"Authorization": f"Bearer {args.master_key}"}
+def check_gateway(http: httpx.Client, master_key: str) -> None:
+    headers = {"Authorization": f"Bearer {master_key}"}
     logs = http.get(f"{GATEWAY}/spend/logs", headers=headers).json()
     assert logs, "the gateway logged no spend"
     print(f"ok: the gateway logged {len(logs)} model calls")
@@ -137,6 +122,50 @@ def main() -> int:
         every=15,
     )
     assert refused
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--timeout", type=float, default=1500)
+    parser.add_argument("--master-key", default="sk-compose")
+    args = parser.parse_args()
+    http = httpx.Client(timeout=60)
+
+    subject = "UDX compilation fails: argument list too long"
+
+    def pending() -> list[dict[str, Any]]:
+        cases: list[dict[str, Any]] = http.get(f"{SERVICE}/cases?status=pending").json()
+        return [c for c in cases if c["subject"] == subject]
+
+    deliver(subject)
+    case = wait_for("the triage finished and a case is pending", pending, args.timeout)[0]
+    case = http.get(f"{SERVICE}/cases/{case['id']}").json()
+    proposal = case["proposal"]
+    print("routing:", proposal["routing"]["llm"]["queue"], "| gate:", proposal["gate"])
+    print("draft:", proposal["draft"]["reply"][:300])
+    assert proposal["evidence"], "no knowledge-base evidence retrieved"
+    assert proposal["draft"]["answerable"], "the draft declined a question the KB answers"
+
+    r = http.post(
+        f"{SERVICE}/cases/{case['id']}/decision", json={"reviewer": "smoke", "action": "approve"}
+    )
+    r.raise_for_status()
+    assert r.json()["workflow_resumed"], "the n8n workflow was not resumed"
+
+    def reply() -> list[email.message.Message]:
+        return [m for m in inbox("customer", "customer") if m["Subject"] == f"Re: {subject}"]
+
+    msg = wait_for("the approved reply reached the customer's mailbox", reply, 300)[0]
+    body = msg.get_payload(decode=True)
+    text = body.decode(errors="replace") if isinstance(body, bytes) else str(msg.get_payload())
+    assert proposal["draft"]["reply"][:40] in text, "the sent text is not the approved draft"
+    wait_for(
+        "the case is marked sent",
+        lambda: http.get(f"{SERVICE}/cases/{case['id']}").json()["status"] == "sent",
+        120,
+    )
+
+    check_gateway(http, args.master_key)
 
     try:
         projects = http.get(f"{PHOENIX}/v1/projects").json()

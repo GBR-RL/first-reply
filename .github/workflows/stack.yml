@@ -59,6 +59,9 @@ jobs:
       - name: Smoke test
         run: python -m first_reply.service.smoke
       - if: failure()
-        run: docker compose ps && docker compose logs --tail 150
+        run: |
+          docker compose ps
+          docker compose logs --tail 400 n8n service
+          docker compose logs --tail 80 greenmail gateway llama
       - if: always()
         run: docker compose down --volumes
