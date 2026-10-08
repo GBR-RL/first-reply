@@ -138,3 +138,19 @@ def test_neighbour_vote_is_weighted_by_similarity() -> None:
     votes, examples = Neighbours(train, x).vote(np.array([0, 1], dtype=np.float32))
     assert votes["queue"]["label"] == "B"
     assert examples[0]["queue"] == "B"
+
+
+def test_resume_retries_until_the_execution_waits() -> None:
+    from first_reply.service.app import resume
+
+    calls: list[int] = []
+
+    def n8n(request: httpx.Request) -> httpx.Response:
+        calls.append(1)
+        return httpx.Response(409 if len(calls) < 3 else 200, json={})
+
+    http = httpx.Client(transport=httpx.MockTransport(n8n))
+    assert resume(http, "http://n8n/webhook-waiting/1", {}, attempts=5, wait_s=0) is True
+    assert len(calls) == 3
+    gone = httpx.Client(transport=httpx.MockTransport(lambda r: httpx.Response(500)))
+    assert resume(gone, "http://n8n/webhook-waiting/1", {}, attempts=5, wait_s=0) is False
