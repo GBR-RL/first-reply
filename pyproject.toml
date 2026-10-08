@@ -48,6 +48,13 @@ strict = true
 ignore_missing_imports = true
 files = ["src/first_reply"]
 
+# torch/transformers are optional: typed when installed, Any when not (as in the lint CI job).
+[[tool.mypy.overrides]]
+module = "first_reply.routing.finetune"
+disallow_subclassing_any = false
+disallow_untyped_calls = false
+warn_unused_ignores = false
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"

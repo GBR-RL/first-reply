@@ -126,7 +126,7 @@ class FinetunedRouter:
         texts = train.text.tolist()
         steps = math.ceil(len(texts) / self.batch_size) * self.epochs
         opt = torch.optim.AdamW(self.model.parameters(), lr=self.lr, weight_decay=0.01)
-        sched = get_linear_schedule_with_warmup(opt, int(0.06 * steps), steps)  # type: ignore[no-untyped-call]
+        sched = get_linear_schedule_with_warmup(opt, int(0.06 * steps), steps)
         ce, bce = torch.nn.CrossEntropyLoss(), torch.nn.BCEWithLogitsLoss()
         if dev is not None and len(dev) > self.dev_eval_size:
             dev = dev.sample(self.dev_eval_size, random_state=SEED)
