@@ -1,0 +1,27 @@
+{
+  "run": "fixed_bm25_train+dev",
+  "chunker": "fixed",
+  "mode": "bm25",
+  "model": null,
+  "reranker": null,
+  "splits": [
+    "train",
+    "dev"
+  ],
+  "questions": 662,
+  "search_ms_per_query": 16.0098,
+  "recall@1": 0.4415,
+  "recall@3": 0.614,
+  "recall@5": 0.696,
+  "recall@10": 0.816,
+  "mrr@10": 0.6013,
+  "ndcg@10": 0.6408,
+  "recall@5_ci": [
+    0.6611,
+    0.7287
+  ],
+  "ndcg@10_ci": [
+    0.6103,
+    0.6689
+  ]
+}

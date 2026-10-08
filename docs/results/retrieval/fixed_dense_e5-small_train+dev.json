@@ -1,0 +1,27 @@
+{
+  "run": "fixed_dense_e5-small_train+dev",
+  "chunker": "fixed",
+  "mode": "dense",
+  "model": "e5-small",
+  "reranker": null,
+  "splits": [
+    "train",
+    "dev"
+  ],
+  "questions": 662,
+  "search_ms_per_query": 16.8405,
+  "recall@1": 0.4024,
+  "recall@3": 0.5263,
+  "recall@5": 0.589,
+  "recall@10": 0.6706,
+  "mrr@10": 0.5233,
+  "ndcg@10": 0.5428,
+  "recall@5_ci": [
+    0.5534,
+    0.6227
+  ],
+  "ndcg@10_ci": [
+    0.5111,
+    0.5758
+  ]
+}

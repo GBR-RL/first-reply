@@ -1,0 +1,26 @@
+{
+  "run": "sections_dense_e5-small",
+  "chunker": "sections",
+  "mode": "dense",
+  "model": "e5-small",
+  "reranker": null,
+  "splits": [
+    "test"
+  ],
+  "questions": 118,
+  "search_ms_per_query": 17.9006,
+  "recall@1": 0.3463,
+  "recall@3": 0.4675,
+  "recall@5": 0.5603,
+  "recall@10": 0.6388,
+  "mrr@10": 0.4751,
+  "ndcg@10": 0.5021,
+  "recall@5_ci": [
+    0.4739,
+    0.6416
+  ],
+  "ndcg@10_ci": [
+    0.4221,
+    0.5795
+  ]
+}

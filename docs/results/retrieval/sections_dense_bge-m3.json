@@ -1,0 +1,26 @@
+{
+  "run": "sections_dense_bge-m3",
+  "chunker": "sections",
+  "mode": "dense",
+  "model": "bge-m3",
+  "reranker": null,
+  "splits": [
+    "test"
+  ],
+  "questions": 118,
+  "search_ms_per_query": 20.4667,
+  "recall@1": 0.4196,
+  "recall@3": 0.5897,
+  "recall@5": 0.634,
+  "recall@10": 0.6944,
+  "mrr@10": 0.5762,
+  "ndcg@10": 0.5812,
+  "recall@5_ci": [
+    0.5489,
+    0.7175
+  ],
+  "ndcg@10_ci": [
+    0.5013,
+    0.6562
+  ]
+}

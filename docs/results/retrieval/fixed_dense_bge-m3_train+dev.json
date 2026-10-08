@@ -1,0 +1,27 @@
+{
+  "run": "fixed_dense_bge-m3_train+dev",
+  "chunker": "fixed",
+  "mode": "dense",
+  "model": "bge-m3",
+  "reranker": null,
+  "splits": [
+    "train",
+    "dev"
+  ],
+  "questions": 662,
+  "search_ms_per_query": 19.2442,
+  "recall@1": 0.4888,
+  "recall@3": 0.6313,
+  "recall@5": 0.6839,
+  "recall@10": 0.7578,
+  "mrr@10": 0.6207,
+  "ndcg@10": 0.6375,
+  "recall@5_ci": [
+    0.6492,
+    0.7159
+  ],
+  "ndcg@10_ci": [
+    0.6066,
+    0.6654
+  ]
+}

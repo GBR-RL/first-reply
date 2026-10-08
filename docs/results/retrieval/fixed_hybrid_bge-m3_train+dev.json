@@ -1,0 +1,27 @@
+{
+  "run": "fixed_hybrid_bge-m3_train+dev",
+  "chunker": "fixed",
+  "mode": "hybrid",
+  "model": "bge-m3",
+  "reranker": null,
+  "splits": [
+    "train",
+    "dev"
+  ],
+  "questions": 662,
+  "search_ms_per_query": 22.6452,
+  "recall@1": 0.5167,
+  "recall@3": 0.6777,
+  "recall@5": 0.7529,
+  "recall@10": 0.8448,
+  "mrr@10": 0.6686,
+  "ndcg@10": 0.6969,
+  "recall@5_ci": [
+    0.72,
+    0.7834
+  ],
+  "ndcg@10_ci": [
+    0.6688,
+    0.7234
+  ]
+}

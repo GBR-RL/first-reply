@@ -1,0 +1,26 @@
+{
+  "run": "sections_bm25_rerank-minilm",
+  "chunker": "sections",
+  "mode": "bm25",
+  "model": null,
+  "reranker": "minilm",
+  "splits": [
+    "test"
+  ],
+  "questions": 118,
+  "search_ms_per_query": 3684.8677,
+  "recall@1": 0.2636,
+  "recall@3": 0.5127,
+  "recall@5": 0.5694,
+  "recall@10": 0.7347,
+  "mrr@10": 0.4547,
+  "ndcg@10": 0.5105,
+  "recall@5_ci": [
+    0.4852,
+    0.6592
+  ],
+  "ndcg@10_ci": [
+    0.4452,
+    0.579
+  ]
+}

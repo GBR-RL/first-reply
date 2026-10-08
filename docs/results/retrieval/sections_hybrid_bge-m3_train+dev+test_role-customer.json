@@ -1,0 +1,31 @@
+{
+  "run": "sections_hybrid_bge-m3_train+dev+test_role-customer",
+  "chunker": "sections",
+  "mode": "hybrid",
+  "model": "bge-m3",
+  "reranker": null,
+  "splits": [
+    "train",
+    "dev",
+    "test"
+  ],
+  "questions": 780,
+  "search_ms_per_query": 24.9629,
+  "recall@1": 0.4174,
+  "recall@3": 0.5518,
+  "recall@5": 0.6032,
+  "recall@10": 0.6677,
+  "mrr@10": 0.5414,
+  "ndcg@10": 0.5565,
+  "recall@5_ci": [
+    0.568,
+    0.6375
+  ],
+  "ndcg@10_ci": [
+    0.5254,
+    0.5865
+  ],
+  "role": "customer",
+  "leaked_chunks": 0,
+  "gold_reachable_share": 0.7795
+}

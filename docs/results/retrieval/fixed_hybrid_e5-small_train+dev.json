@@ -1,0 +1,27 @@
+{
+  "run": "fixed_hybrid_e5-small_train+dev",
+  "chunker": "fixed",
+  "mode": "hybrid",
+  "model": "e5-small",
+  "reranker": null,
+  "splits": [
+    "train",
+    "dev"
+  ],
+  "questions": 662,
+  "search_ms_per_query": 19.1168,
+  "recall@1": 0.4798,
+  "recall@3": 0.6298,
+  "recall@5": 0.7141,
+  "recall@10": 0.8227,
+  "mrr@10": 0.6269,
+  "ndcg@10": 0.6601,
+  "recall@5_ci": [
+    0.682,
+    0.7469
+  ],
+  "ndcg@10_ci": [
+    0.6307,
+    0.6896
+  ]
+}
