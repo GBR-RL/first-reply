@@ -1,0 +1,126 @@
+{
+  "run": "triage-qwen3.5-4b",
+  "targets": {
+    "queue": {
+      "n": 1000,
+      "macro_f1": 0.1918,
+      "macro_f1_ci": [
+        0.1631,
+        0.2176
+      ],
+      "accuracy": 0.257,
+      "accuracy_ci": [
+        0.2325,
+        0.283
+      ],
+      "by_group": {
+        "de": {
+          "n": 304,
+          "macro_f1": 0.1778
+        },
+        "en": {
+          "n": 696,
+          "macro_f1": 0.1948
+        }
+      }
+    },
+    "priority": {
+      "n": 1000,
+      "macro_f1": 0.3594,
+      "macro_f1_ci": [
+        0.33,
+        0.3911
+      ],
+      "accuracy": 0.398,
+      "accuracy_ci": [
+        0.3685,
+        0.431
+      ],
+      "by_group": {
+        "de": {
+          "n": 304,
+          "macro_f1": 0.3981
+        },
+        "en": {
+          "n": 696,
+          "macro_f1": 0.3413
+        }
+      }
+    },
+    "type": {
+      "n": 1000,
+      "macro_f1": 0.4828,
+      "macro_f1_ci": [
+        0.4498,
+        0.519
+      ],
+      "accuracy": 0.675,
+      "accuracy_ci": [
+        0.648,
+        0.7045
+      ],
+      "by_group": {
+        "de": {
+          "n": 304,
+          "macro_f1": 0.4288
+        },
+        "en": {
+          "n": 696,
+          "macro_f1": 0.5064
+        }
+      }
+    }
+  },
+  "tags": {
+    "n": 1000,
+    "micro_f1": 0.3824,
+    "micro_f1_ci": [
+      0.3736,
+      0.395
+    ],
+    "macro_f1": 0.381
+  },
+  "ops": {
+    "items": 1000,
+    "errors": 0,
+    "prompt_tokens": {
+      "mean": 493.004,
+      "p50": 489.0,
+      "p95": 572.05
+    },
+    "completion_tokens": {
+      "mean": 85.443,
+      "p50": 85.0,
+      "p95": 97.0
+    },
+    "latency_s": {
+      "mean": 13.0517,
+      "p50": 13.07,
+      "p95": 17.512
+    },
+    "chargeback_cost_per_1000_items": 0.0835,
+    "output_tokens_per_s": 6.5465
+  },
+  "classical_on_same_tickets": {
+    "tfidf_lr": {
+      "queue": 0.297,
+      "priority": 0.3937,
+      "type": 0.7673
+    },
+    "bge-m3_knn": {
+      "queue": 0.3399,
+      "priority": 0.4703,
+      "type": 0.7945
+    },
+    "bge-m3_lr": {
+      "queue": 0.2521,
+      "priority": 0.3678,
+      "type": 0.7978
+    },
+    "e5-small_ft": {
+      "queue": 0.2223,
+      "priority": 0.3502,
+      "type": 0.7589
+    }
+  }
+}

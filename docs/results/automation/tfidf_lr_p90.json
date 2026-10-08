@@ -1,0 +1,21 @@
+{
+  "method": "tfidf_lr",
+  "target_precision": 0.9,
+  "targets": {
+    "queue": {
+      "threshold_from_dev": 0.7101,
+      "coverage_test": 0.0593,
+      "precision_test": 0.9097
+    },
+    "priority": {
+      "threshold_from_dev": 0.9581,
+      "coverage_test": 0.002,
+      "precision_test": 0.8125
+    },
+    "type": {
+      "threshold_from_dev": 0.6322,
+      "coverage_test": 0.7546,
+      "precision_test": 0.823
+    }
+  }
+}

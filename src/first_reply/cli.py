@@ -154,12 +154,29 @@ def retrieval_eval(
     ] = None,
     reranker: str | None = typer.Option(None, help="Cross-encoder to rerank the top 20."),
     role: str | None = typer.Option(None, help="Search as this role (access filter)."),
+    german: bool = typer.Option(False, help="Use the machine-translated German questions."),
 ) -> None:
     """Score document retrieval on the answerable TechQA questions."""
+    from first_reply import corpora
     from first_reply.kb.evaluate import evaluate
 
+    extra = (
+        {
+            "questions": corpora.german_questions(),
+            "query_corpus": "kb-questions-de",
+            "suffix": "_de",
+        }
+        if german
+        else {}
+    )
     s = evaluate(
-        chunker, mode, model, splits=tuple(split or ["test"]), reranker=reranker, role=role
+        chunker,
+        mode,
+        model,
+        splits=tuple(split or ["test"]),
+        reranker=reranker,
+        role=role,
+        **extra,  # type: ignore[arg-type]
     )
     if role:
         typer.echo(
@@ -240,6 +257,31 @@ def llm_run(
     else:
         raise typer.BadParameter(f"unknown task {task!r}")
     typer.echo(f"wrote {path}")
+
+
+@app.command()
+def reports() -> None:
+    """Regenerate the LLM, drafting, judge and automation reports from the runs on disk."""
+    from first_reply.eval import llm_runs
+    from first_reply.eval import reports as r
+
+    classical = ("tfidf_lr", "bge-m3_knn", "bge-m3_lr", "e5-small_ft")
+    for method in classical[:3]:
+        for precision in (0.95, 0.90):
+            r.automation(method, precision)
+    runs = sorted(p.name for p in llm_runs.OUT.glob("*") if (p / "merged.jsonl").exists())
+    for name in runs:
+        if name.startswith("triage"):
+            r.triage_report(name, classical)
+        elif name.startswith("draft"):
+            model = name.removeprefix("draft-")
+            judged = f"judge-drafts-qwen3.5-4b-on-{model.split('-')[0]}-drafts"
+            r.draft_report(name, judged if judged in runs else None)
+        elif name.startswith("judge-ragbench"):
+            r.judge_validation(name)
+    if "triage-fewshot-qwen3.5-4b" in runs:
+        r.gate_report("triage-fewshot-qwen3.5-4b")
+    typer.echo(f"reports written for {len(runs)} runs")
 
 
 @app.command("model-url")

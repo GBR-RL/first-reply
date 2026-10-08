@@ -1,0 +1,21 @@
+{
+  "method": "bge-m3_lr",
+  "target_precision": 0.95,
+  "targets": {
+    "queue": {
+      "threshold_from_dev": 0.8013,
+      "coverage_test": 0.0687,
+      "precision_test": 0.9185
+    },
+    "priority": {
+      "threshold_from_dev": 0.8483,
+      "coverage_test": 0.0044,
+      "precision_test": 0.9143
+    },
+    "type": {
+      "threshold_from_dev": 0.7437,
+      "coverage_test": 0.4785,
+      "precision_test": 0.9042
+    }
+  }
+}
