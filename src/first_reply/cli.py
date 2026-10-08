@@ -16,14 +16,28 @@ def main() -> None:
 
 @app.command()
 def data() -> None:
-    """Download the pinned datasets and prepare the ticket set."""
-    from first_reply.data import download, tickets
+    """Download the pinned datasets and prepare the ticket set and knowledge base."""
+    from first_reply.data import download, techqa, tickets
 
     paths = download.fetch_all()
     typer.echo(f"downloaded {len(paths)} files")
     df = tickets.build()
     counts = df.groupby(["split", "language"]).size().unstack(fill_value=0)
     typer.echo(f"tickets: {len(df)} unique\n{counts}")
+    docs, questions, responses = techqa.build()
+    answerable = questions.groupby("split").answerable.agg(["size", "sum"])
+    typer.echo(
+        f"knowledge base: {len(docs)} documents, {len(responses)} reference responses\n"
+        f"questions (size, answerable):\n{answerable}"
+    )
+
+
+@app.command("data-card")
+def data_card() -> None:
+    """Regenerate docs/data.md from the prepared datasets."""
+    from first_reply.data import card
+
+    typer.echo(f"wrote {card.write()}")
 
 
 @app.command()
