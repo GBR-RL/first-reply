@@ -1,87 +1,87 @@
 {
-  "method": "tfidf_lr",
-  "fit_seconds": 82.9,
-  "predict_ms_per_ticket": 0.107,
+  "method": "e5-small_lr",
+  "fit_seconds": 17.2,
+  "predict_ms_per_ticket": 0.051,
   "targets": {
     "queue": {
       "n": 8032,
-      "macro_f1": 0.2824,
+      "macro_f1": 0.2233,
       "macro_f1_ci": [
-        0.2687,
-        0.2948
+        0.2146,
+        0.2322
       ],
-      "accuracy": 0.3425,
+      "accuracy": 0.2397,
       "accuracy_ci": [
-        0.332,
-        0.3527
+        0.2304,
+        0.2496
       ],
       "by_group": {
         "de": {
           "n": 2448,
-          "macro_f1": 0.2614
+          "macro_f1": 0.2115
         },
         "en": {
           "n": 5584,
-          "macro_f1": 0.2889
+          "macro_f1": 0.2285
         }
       }
     },
     "priority": {
       "n": 8032,
-      "macro_f1": 0.4131,
+      "macro_f1": 0.3918,
       "macro_f1_ci": [
-        0.402,
-        0.423
+        0.381,
+        0.4022
       ],
-      "accuracy": 0.4406,
+      "accuracy": 0.4058,
       "accuracy_ci": [
-        0.4292,
-        0.4507
+        0.3948,
+        0.4163
       ],
       "by_group": {
         "de": {
           "n": 2448,
-          "macro_f1": 0.414
+          "macro_f1": 0.4104
         },
         "en": {
           "n": 5584,
-          "macro_f1": 0.4127
+          "macro_f1": 0.3834
         }
       }
     },
     "type": {
       "n": 8032,
-      "macro_f1": 0.7833,
+      "macro_f1": 0.7624,
       "macro_f1_ci": [
-        0.7748,
-        0.7916
+        0.7539,
+        0.7708
       ],
-      "accuracy": 0.7545,
+      "accuracy": 0.7252,
       "accuracy_ci": [
-        0.7453,
-        0.7638
+        0.7158,
+        0.7351
       ],
       "by_group": {
         "de": {
           "n": 2448,
-          "macro_f1": 0.7737
+          "macro_f1": 0.7567
         },
         "en": {
           "n": 5584,
-          "macro_f1": 0.7867
+          "macro_f1": 0.7629
         }
       }
     }
   },
   "tags": {
     "vocab_size": 33,
-    "threshold_from_dev": 0.3153,
+    "threshold_from_dev": 0.3575,
     "n": 8032,
-    "micro_f1": 0.7222,
+    "micro_f1": 0.6914,
     "micro_f1_ci": [
-      0.7179,
-      0.7259
+      0.6861,
+      0.6959
     ],
-    "macro_f1": 0.607
+    "macro_f1": 0.5603
   }
 }
