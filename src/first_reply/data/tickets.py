@@ -45,7 +45,7 @@ def load_raw(raw: Path = RAW) -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True)
 
 
-def clean(df: pd.DataFrame) -> pd.DataFrame:
+def clean(df: pd.DataFrame, dedupe: bool = True) -> pd.DataFrame:
     df = df.dropna(subset=["body", "answer", *LABELS]).copy()
     for col in ("subject", "body", "answer"):
         df[col] = df[col].fillna("").astype(str).str.strip()
@@ -56,8 +56,11 @@ def clean(df: pd.DataFrame) -> pd.DataFrame:
         for row in df[list(TAG_COLUMNS)].itertuples(index=False)
     ]
     df["key"] = df.body.map(normalize)
-    df = df.drop_duplicates("key", keep="first")
-    df["id"] = df.body.map(ticket_id)
+    if dedupe:
+        df = df.drop_duplicates("key", keep="first")
+        df["id"] = df.body.map(ticket_id)
+    else:
+        df["id"] = [f"{ticket_id(b)}-{i}" for i, b in enumerate(df.body)]
     df["text"] = np.where(df.subject.str.len() > 0, df.subject + "\n\n" + df.body, df.body)
     cols = ["id", "release", "language", "subject", "body", "text", "answer", *LABELS, "tags"]
     return df[cols].reset_index(drop=True)
