@@ -22,7 +22,7 @@ CAPTIONS = (
     "1  A customer email arrives: n8n posts it to the triage service",
     "2  Routing, a cited draft and the evidence it rests on, held for review",
     "3  The reviewer approves; n8n resumes and sends the reply",
-    "4  The customer's mailbox: the approved, cited reply",
+    "4  The customer's mailbox: the reply the reviewer approved",
 )
 
 
