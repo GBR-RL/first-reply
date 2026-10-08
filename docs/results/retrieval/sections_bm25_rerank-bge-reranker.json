@@ -1,0 +1,26 @@
+{
+  "run": "sections_bm25_rerank-bge-reranker",
+  "chunker": "sections",
+  "mode": "bm25",
+  "model": null,
+  "reranker": "bge-reranker",
+  "splits": [
+    "test"
+  ],
+  "questions": 118,
+  "search_ms_per_query": 36977.7274,
+  "recall@1": 0.4257,
+  "recall@3": 0.6083,
+  "recall@5": 0.7078,
+  "recall@10": 0.8208,
+  "mrr@10": 0.5873,
+  "ndcg@10": 0.6355,
+  "recall@5_ci": [
+    0.6258,
+    0.7842
+  ],
+  "ndcg@10_ci": [
+    0.5649,
+    0.703
+  ]
+}

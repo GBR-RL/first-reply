@@ -1,0 +1,26 @@
+{
+  "run": "sections_hybrid_e5-small",
+  "chunker": "sections",
+  "mode": "hybrid",
+  "model": "e5-small",
+  "reranker": null,
+  "splits": [
+    "test"
+  ],
+  "questions": 118,
+  "search_ms_per_query": 20.4282,
+  "recall@1": 0.3958,
+  "recall@3": 0.6335,
+  "recall@5": 0.7007,
+  "recall@10": 0.8061,
+  "mrr@10": 0.5721,
+  "ndcg@10": 0.6149,
+  "recall@5_ci": [
+    0.6241,
+    0.7757
+  ],
+  "ndcg@10_ci": [
+    0.5452,
+    0.6804
+  ]
+}

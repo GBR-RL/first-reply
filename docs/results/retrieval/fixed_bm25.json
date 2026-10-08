@@ -1,0 +1,26 @@
+{
+  "run": "fixed_bm25",
+  "chunker": "fixed",
+  "mode": "bm25",
+  "model": null,
+  "reranker": null,
+  "splits": [
+    "test"
+  ],
+  "questions": 118,
+  "search_ms_per_query": 16.2883,
+  "recall@1": 0.4299,
+  "recall@3": 0.6171,
+  "recall@5": 0.6996,
+  "recall@10": 0.8309,
+  "mrr@10": 0.5959,
+  "ndcg@10": 0.6446,
+  "recall@5_ci": [
+    0.6179,
+    0.7708
+  ],
+  "ndcg@10_ci": [
+    0.5747,
+    0.7094
+  ]
+}
