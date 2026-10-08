@@ -5,7 +5,7 @@
 3. A reviewer approves the draft through the API.
 4. n8n resumes, sends the reply over SMTP, and marks the case sent.
 5. The reply is in the customer's mailbox.
-6. The gateway logged the model calls, and a key with a spent budget is refused.
+6. The gateway logged the model calls, refuses a key over its rate limit and records its spend.
 
 Usage: python -m first_reply.service.smoke [--question-id QID]
 """
