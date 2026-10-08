@@ -13,6 +13,7 @@ import pandas as pd
 from first_reply import embed
 from first_reply.config import ROOT, RUNS
 from first_reply.data import techqa
+from first_reply.kb.access import ROLES, tier
 from first_reply.kb.rerank import rerank
 from first_reply.kb.retrieve import Retriever, doc_ranking
 from first_reply.routing.base import rounded
@@ -67,6 +68,8 @@ def evaluate(
         assert model is not None
         vectors = embed.load(model, query_corpus, q.qid.tolist())
     retriever = Retriever(chunker, model if mode != "bm25" else None)
+    docs = techqa.load_docs()
+    tier_of = dict(zip(docs.doc_id, docs.doc_type.map(tier), strict=True))
     rows = []
     t0 = time.perf_counter()
     for i, r in enumerate(q.to_dict("records")):
@@ -76,9 +79,17 @@ def evaluate(
             hits = rerank(str(r["question"]), hits, reranker)
         ranked = doc_ranking(hits)
         gold = [str(g) for g in r["gold_doc_ids"]]
-        rows.append({"qid": r["qid"], "ranked": ranked[:10], **metrics(ranked, gold)})
+        row = {"qid": r["qid"], "ranked": ranked[:10], **metrics(ranked, gold)}
+        if role:
+            row["leaked_chunks"] = sum(h.tier > ROLES[role] for h in hits)
+            row["gold_reachable"] = any(tier_of[g] <= ROLES[role] for g in gold)
+        rows.append(row)
     ms = 1000 * (time.perf_counter() - t0) / max(len(q), 1)
     df = pd.DataFrame(rows)
+    if not suffix and tuple(splits) != ("test",):
+        suffix = "_" + "+".join(splits)
+    if role:
+        suffix += f"_role-{role}"
     name = run_name(chunker, mode, model, reranker, suffix)
     summary: dict[str, Any] = {
         "run": name,
@@ -94,6 +105,10 @@ def evaluate(
         summary[col] = float(df[col].mean())
     for col in ("recall@5", "ndcg@10"):
         summary[f"{col}_ci"] = _ci(df[col].to_numpy())
+    if role:
+        summary["role"] = role
+        summary["leaked_chunks"] = int(df.leaked_chunks.sum())
+        summary["gold_reachable_share"] = float(df.gold_reachable.mean())
     out = RUNS / "retrieval"
     out.mkdir(parents=True, exist_ok=True)
     df.to_parquet(out / f"{name}.parquet", index=False)

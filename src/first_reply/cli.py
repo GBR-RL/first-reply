@@ -153,11 +153,19 @@ def retrieval_eval(
         list[str] | None, typer.Option(help="Question splits (default: test).")
     ] = None,
     reranker: str | None = typer.Option(None, help="Cross-encoder to rerank the top 20."),
+    role: str | None = typer.Option(None, help="Search as this role (access filter)."),
 ) -> None:
     """Score document retrieval on the answerable TechQA questions."""
     from first_reply.kb.evaluate import evaluate
 
-    s = evaluate(chunker, mode, model, splits=tuple(split or ["test"]), reranker=reranker)
+    s = evaluate(
+        chunker, mode, model, splits=tuple(split or ["test"]), reranker=reranker, role=role
+    )
+    if role:
+        typer.echo(
+            f"role {role}: leaked chunks {s['leaked_chunks']}, "
+            f"gold reachable for {s['gold_reachable_share']:.1%} of questions"
+        )
     lo, hi = s["ndcg@10_ci"]
     typer.echo(
         f"{s['run']}: recall@5 {s['recall@5']:.3f}  nDCG@10 {s['ndcg@10']:.3f} "
