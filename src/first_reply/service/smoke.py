@@ -79,7 +79,7 @@ def picked_up() -> bool:
 
 
 def deliver(subject: str) -> None:
-    """Send the customer email; resend if n8n has not fetched it within a minute.
+    """Send the customer email; resend if n8n has not fetched it within two minutes.
 
     The trigger ignores mail that arrived before it connected.
     """
@@ -87,7 +87,7 @@ def deliver(subject: str) -> None:
         send_email(subject, QUESTION)
         print(f"sent the customer email (attempt {attempt + 1})")
         try:
-            wait_for("n8n fetched the email", picked_up, 60)
+            wait_for("n8n fetched the email", picked_up, 120)
             return
         except TimeoutError:
             if attempt == 2:
