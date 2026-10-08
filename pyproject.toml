@@ -34,6 +34,7 @@ service = [
   "opentelemetry-exporter-otlp-proto-http>=1.27",
 ]
 plots = ["matplotlib>=3.8"]
+demo = ["playwright>=1.47", "pillow>=10"]
 dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11", "pandas-stubs"]
 
 [project.scripts]
