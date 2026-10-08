@@ -27,3 +27,10 @@ def test_ops_summarises_tokens_latency_and_errors() -> None:
     assert out["prompt_tokens"]["mean"] == 150
     assert out["output_tokens_per_s"] == 10.0
     assert abs(out["chargeback_cost_per_1000_items"] - 2.0) < 1e-9
+
+
+def test_corrected_rate_inverts_a_known_judge() -> None:
+    # True share 0.6, judge with sensitivity 0.5 and specificity 0.9 observes 0.34.
+    observed = 0.6 * 0.5 + 0.4 * 0.1
+    assert abs(reports.corrected_rate(observed, 0.5, 0.9) - 0.6) < 1e-9
+    assert reports.corrected_rate(0.3, 0.4, 0.5) is None

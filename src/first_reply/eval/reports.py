@@ -128,8 +128,52 @@ def draft_report(name: str, judged: str | None = None) -> dict[str, Any]:
         report["judge_supported_ci"] = bootstrap_ci(
             lambda a, _b: float(np.mean(a)), sup, sup, n_boot=1000
         )
+        validation = RESULTS / "judge" / "judge-ragbench-qwen3.5-4b.json"
+        if validation.exists():
+            v = json.loads(validation.read_text())
+            report["faithfulness_corrected"] = corrected_rate(
+                report["judge_supported_share"], 1 - v["false_fail_rate"], 1 - v["false_pass_rate"]
+            )
+            report["faithfulness_corrected_ci"] = corrected_ci(sup, v["run"])
     _write("drafting", name, report)
     return report
+
+
+def corrected_rate(observed: float, sensitivity: float, specificity: float) -> float | None:
+    """Rogan-Gladen estimate of the true share from an imperfect judge's observed share.
+
+    With a strict judge (high specificity, low sensitivity) the observed share is a lower
+    bound; the correction divides by (sensitivity + specificity - 1) and amplifies noise.
+    """
+    denom = sensitivity + specificity - 1
+    if denom <= 0:
+        return None
+    return float(min(1.0, max(0.0, (observed + specificity - 1) / denom)))
+
+
+def corrected_ci(
+    verdicts: np.ndarray, validation_run: str, n_boot: int = 2000, seed: int = 0
+) -> tuple[float, float] | None:
+    """Bootstrap interval of the corrected rate, resampling the judge's validation set too."""
+    path = run_dir(validation_run) / "merged.jsonl"
+    if not path.exists():
+        return None
+    v = pd.read_json(path, lines=True)
+    v = v[v.get("error", pd.Series(index=v.index, dtype=object)).isna()]
+    y, p = v.label_supported.astype(bool).to_numpy(), v.supported.astype(bool).to_numpy()
+    rng = np.random.default_rng(seed)
+    out = []
+    for _ in range(n_boot):
+        i = rng.integers(0, len(y), len(y))
+        j = rng.integers(0, len(verdicts), len(verdicts))
+        sens, spec = p[i][y[i]].mean(), (~p[i][~y[i]]).mean()
+        est = corrected_rate(float(verdicts[j].mean()), float(sens), float(spec))
+        if est is not None:
+            out.append(est)
+    if not out:
+        return None
+    lo, hi = np.quantile(out, [0.025, 0.975])
+    return float(lo), float(hi)
 
 
 def judge_validation(name: str) -> dict[str, Any]:
