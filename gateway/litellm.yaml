@@ -1,0 +1,56 @@
+# LiteLLM gateway in front of the llama.cpp servers. Every model call of the service and the
+# evaluation goes through here: one endpoint and key, model aliases, fallback, rate limits,
+# retries, and a log of tokens, latency and (internal chargeback) cost per request.
+#
+# Costs are an internal chargeback rate for CPU time, not a vendor price; they exist so the
+# per-key budgets and spend reports have a unit.
+
+model_list:
+  - model_name: qwen3.5-4b
+    litellm_params:
+      model: openai/qwen3.5-4b
+      api_base: os.environ/QWEN_URL
+      api_key: none
+      rpm: 120
+      timeout: 600
+    model_info:
+      input_cost_per_token: 0.0000001
+      output_cost_per_token: 0.0000004
+
+  - model_name: granite-4.2-3b
+    litellm_params:
+      model: openai/granite-4.2-3b
+      api_base: os.environ/GRANITE_URL
+      api_key: none
+      rpm: 120
+      timeout: 600
+    model_info:
+      input_cost_per_token: 0.00000008
+      output_cost_per_token: 0.0000003
+
+  # The alias the service uses. If the primary model fails, the router falls back to Granite.
+  - model_name: triage
+    litellm_params:
+      model: openai/qwen3.5-4b
+      api_base: os.environ/QWEN_URL
+      api_key: none
+      rpm: 120
+      timeout: 600
+    model_info:
+      input_cost_per_token: 0.0000001
+      output_cost_per_token: 0.0000004
+
+router_settings:
+  fallbacks:
+    - triage: [granite-4.2-3b]
+  num_retries: 1
+  allowed_fails: 3
+  cooldown_time: 30
+
+litellm_settings:
+  # Pass llama.cpp-specific fields (chat_template_kwargs) through unchanged.
+  drop_params: false
+  request_timeout: 600
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
