@@ -28,5 +28,16 @@
     },
     "chargeback_cost_per_1000_items": 0.2765,
     "output_tokens_per_s": 1.317
-  }
+  },
+  "judged_answers": 603,
+  "judge_supported_share": 0.2272,
+  "judge_supported_ci": [
+    0.194,
+    0.262
+  ],
+  "faithfulness_corrected": 0.9828,
+  "faithfulness_corrected_ci": [
+    0.6972,
+    1.0
+  ]
 }
