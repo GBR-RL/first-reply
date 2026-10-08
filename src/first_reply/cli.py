@@ -41,6 +41,37 @@ def data_card() -> None:
 
 
 @app.command()
+def route(method: str = typer.Option("tfidf_lr", help="Routing method to evaluate.")) -> None:
+    """Train a routing method on train, report macro-F1 on test (95% bootstrap intervals)."""
+    from first_reply import routing
+    from first_reply.data import tickets
+    from first_reply.routing.base import evaluate
+
+    report = evaluate(routing.make(method), tickets.load())
+    for target, r in report["targets"].items():
+        lo, hi = r["macro_f1_ci"]
+        f1, acc = r["macro_f1"], r["accuracy"]
+        typer.echo(f"{target:9s} macro-F1 {f1:.3f} [{lo:.3f}, {hi:.3f}]  acc {acc:.3f}")
+    if "tags" in report:
+        tags = report["tags"]
+        typer.echo(f"tags      micro-F1 {tags['micro_f1']:.3f} ({tags['vocab_size']} tags)")
+
+
+@app.command("leakage-check")
+def leakage_check() -> None:
+    """Score the TF-IDF baseline on a split drawn with and without de-duplication."""
+    import json
+
+    from first_reply.routing.base import RESULTS, rounded
+    from first_reply.routing.leakage import check
+
+    report = rounded(check())
+    RESULTS.mkdir(parents=True, exist_ok=True)
+    (RESULTS / "leakage_check.json").write_text(json.dumps(report, indent=2) + "\n")
+    typer.echo(json.dumps(report, indent=2))
+
+
+@app.command()
 def version() -> None:
     """Print the package version."""
     typer.echo(__version__)
