@@ -1,0 +1,32 @@
+{
+  "run": "draft-qwen3.5-4b",
+  "questions": 885,
+  "answer_rate": 0.6814,
+  "gold_document_shown": 0.6734,
+  "answered_citing_gold": 0.7131,
+  "citation_precision": 0.6517,
+  "declined_when_gold_not_shown": 0.5952,
+  "answered_when_gold_shown": 0.8154,
+  "answered_unanswerable_questions": 0.3524,
+  "ops": {
+    "items": 885,
+    "errors": 8,
+    "prompt_tokens": {
+      "mean": 2263.3273,
+      "p50": 2161.0,
+      "p95": 3578.2
+    },
+    "completion_tokens": {
+      "mean": 125.5371,
+      "p50": 136.0,
+      "p95": 255.6
+    },
+    "latency_s": {
+      "mean": 95.3183,
+      "p50": 94.36,
+      "p95": 172.956
+    },
+    "chargeback_cost_per_1000_items": 0.2765,
+    "output_tokens_per_s": 1.317
+  }
+}
