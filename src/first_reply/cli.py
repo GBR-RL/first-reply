@@ -173,6 +173,93 @@ def retrieval_eval(
     )
 
 
+@app.command("llm-run")
+def llm_run(
+    task: str = typer.Option(
+        ..., help="triage, triage-fewshot, draft, translate, judge-ragbench or judge-drafts"
+    ),
+    model: str = typer.Option("qwen3.5-4b", help="Model alias at the gateway."),
+    name: str = typer.Option("", help="Run name (default: task-model)."),
+    shard: int = typer.Option(0),
+    shards: int = typer.Option(1),
+    chunker: str = typer.Option("sections", help="draft: knowledge-base chunker."),
+    mode: str = typer.Option("bm25", help="draft: bm25, dense or hybrid."),
+    dense_model: str = typer.Option("bge-m3", help="draft: dense embedding model."),
+    reranker: str | None = typer.Option(None, help="draft: cross-encoder for the top 20."),
+    k: int = typer.Option(5, help="draft: excerpts shown to the model."),
+    source: str = typer.Option("", help="judge-drafts: name of the draft run to judge."),
+    all_splits: bool = typer.Option(False, help="draft: all questions instead of test only."),
+) -> None:
+    """Run an LLM task over one shard of its items (writes JSON lines, resumable)."""
+    from typing import Any
+
+    from first_reply import embed as emb
+    from first_reply.data import techqa
+    from first_reply.eval import llm_runs
+    from first_reply.kb.rerank import rerank
+    from first_reply.kb.retrieve import Retriever
+    from first_reply.llm.client import LLM
+
+    llm = LLM(model)
+    run = name or f"{task}-{model}"
+    if task in ("triage", "triage-fewshot"):
+        path = llm_runs.triage_run(
+            llm, run, few_shot=task == "triage-fewshot", shard=shard, shards=shards
+        )
+    elif task == "translate":
+        path = llm_runs.translate_run(llm, run, shard=shard, shards=shards)
+    elif task == "judge-ragbench":
+        path = llm_runs.judge_ragbench_run(llm, run, shard=shard, shards=shards)
+    elif task == "judge-drafts":
+        import pandas as pd
+
+        from first_reply.kb.index import load_chunks
+
+        drafts = pd.read_json(llm_runs.run_dir(source) / "merged.jsonl", lines=True)
+        path = llm_runs.judge_drafts_run(
+            llm, run, drafts, load_chunks(chunker), shard=shard, shards=shards
+        )
+    elif task == "draft":
+        retriever = Retriever(chunker, dense_model if mode != "bm25" else None)
+        vectors: dict[str, list[float]] = {}
+        if mode != "bm25":
+            q = techqa.load_questions()
+            v = emb.load(dense_model, "kb-questions", q.qid.tolist())
+            vectors = {qid: v[i].tolist() for i, qid in enumerate(q.qid)}
+
+        def retrieve(r: dict[str, Any]) -> list[Any]:
+            hits = retriever.search(r["question"], mode=mode, dense=vectors.get(r["qid"]))
+            if reranker:
+                hits = rerank(r["question"], hits, reranker)
+            return hits[:k]
+
+        splits = ("train", "dev", "test") if all_splits else ("test",)
+        path = llm_runs.draft_run(
+            llm, run, retrieve=retrieve, splits=splits, shard=shard, shards=shards
+        )
+    else:
+        raise typer.BadParameter(f"unknown task {task!r}")
+    typer.echo(f"wrote {path}")
+
+
+@app.command("model-url")
+def model_url(name: str) -> None:
+    """Download URL of a GGUF model."""
+    from first_reply.llm.models import MODELS
+
+    typer.echo(MODELS[name].url)
+
+
+@app.command("llm-merge")
+def llm_merge(name: str = typer.Option(...)) -> None:
+    """Join the shard files of an LLM run."""
+    from first_reply.eval import llm_runs
+
+    df = llm_runs.merge(name)
+    errors = int(df["error"].notna().sum()) if "error" in df else 0
+    typer.echo(f"{name}: {len(df)} items, {errors} errors")
+
+
 @app.command()
 def version() -> None:
     """Print the package version."""

@@ -1,0 +1,182 @@
+name: LLM run
+
+# Runs one LLM task (triage, triage-fewshot, draft, translate) with one local model over
+# parallel shards. Each shard is a standard CPU runner with its own llama.cpp server behind the
+# LiteLLM gateway, so the run goes through the same gateway as the service. Manual trigger.
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        type: choice
+        options: [triage, triage-fewshot, draft, translate, judge-ragbench, judge-drafts]
+        default: triage
+      model:
+        type: choice
+        options: [qwen3.5-4b, granite-4.2-3b]
+        default: qwen3.5-4b
+      shards:
+        description: Parallel runners
+        default: "16"
+      embeddings_runs:
+        description: Space-separated Embeddings run ids whose vectors this task needs
+        default: ""
+      draft_args:
+        description: "Extra options, e.g. --mode hybrid --reranker bge-reranker, or --source <run>"
+        default: ""
+      source_run:
+        description: "judge-drafts: LLM run id whose merged drafts to judge"
+        default: ""
+      label:
+        description: Optional suffix for the run name
+        default: ""
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  LLAMA_CPP: b11327
+  RUN: ${{ inputs.task }}-${{ inputs.model }}${{ inputs.label && format('-{0}', inputs.label) || '' }}
+
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    outputs:
+      shards: ${{ steps.shards.outputs.list }}
+    steps:
+      - id: shards
+        run: python3 -c "print('list=' + str(list(range(int('${{ inputs.shards }}')))))" >> "$GITHUB_OUTPUT"
+
+  run:
+    needs: plan
+    name: Shard ${{ matrix.shard }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.plan.outputs.shards) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install
+        run: |
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -e ".[ml,gateway]"
+      - uses: actions/cache@v4
+        with:
+          path: data/raw
+          key: raw-data-v1-${{ hashFiles('src/first_reply/data/download.py') }}
+      - name: Prepare data
+        run: |
+          first-reply data
+          first-reply kb-chunks
+      - name: Fetch embeddings
+        if: inputs.embeddings_runs != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for id in ${{ inputs.embeddings_runs }}; do
+            gh run download "$id" --pattern 'embeddings-*' --dir emb
+          done
+          for d in emb/embeddings-*; do
+            model=$(basename "$d" | sed -E 's/^embeddings-(bge-m3|e5-small)-.*/\1/')
+            mkdir -p "data/cache/embeddings/$model" && cp "$d"/*.npz "data/cache/embeddings/$model/"
+          done
+          ls -R data/cache/embeddings
+      - name: Fetch drafts to judge
+        if: inputs.source_run != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download "${{ inputs.source_run }}" --pattern 'run-*' --dir src_run
+          for d in src_run/run-*; do
+            name=$(basename "$d" | sed 's/^run-//')
+            mkdir -p "runs/llm/$name" && cp "$d"/merged.jsonl "runs/llm/$name/"
+          done
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-rerankers-v1
+      - name: llama.cpp (pinned release, CPU build)
+        id: llama
+        uses: actions/cache@v4
+        with:
+          path: llama
+          key: llama-cpp-${{ env.LLAMA_CPP }}-ubuntu-x64
+      - if: steps.llama.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p llama
+          curl -sSfL "https://github.com/ggml-org/llama.cpp/releases/download/$LLAMA_CPP/llama-$LLAMA_CPP-bin-ubuntu-x64.tar.gz" \
+            | tar -xz -C llama
+      - name: Model
+        id: model
+        uses: actions/cache@v4
+        with:
+          path: models
+          key: gguf-${{ inputs.model }}-v1
+      - if: steps.model.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p models
+          curl -sSfL --retry 3 -o models/model.gguf "$(first-reply model-url '${{ inputs.model }}')"
+      - name: Start llama-server and the gateway
+        env:
+          QWEN_URL: http://127.0.0.1:8081/v1
+          GRANITE_URL: http://127.0.0.1:8081/v1
+          LITELLM_MASTER_KEY: sk-ci
+        run: |
+          server=$(find llama -name llama-server -type f | head -1)
+          export LD_LIBRARY_PATH="$(dirname "$server"):$LD_LIBRARY_PATH"
+          nohup "$server" -m models/model.gguf --jinja -c 8192 -t "$(nproc)" -np 1 \
+            --host 127.0.0.1 --port 8081 > server.log 2>&1 &
+          nohup litellm --config gateway/litellm.yaml --host 127.0.0.1 --port 4000 > gateway.log 2>&1 &
+          for i in $(seq 1 150); do
+            curl -sf http://127.0.0.1:8081/health >/dev/null && curl -sf http://127.0.0.1:4000/health/liveliness >/dev/null && break
+            sleep 2
+          done
+          lscpu | grep -E "Model name|^CPU\(s\)"
+      - name: Run
+        env:
+          FIRST_REPLY_LLM_URL: http://127.0.0.1:4000/v1
+          FIRST_REPLY_LLM_KEY: sk-ci
+        run: >
+          first-reply llm-run --task ${{ inputs.task }} --model ${{ inputs.model }} --name "$RUN"
+          --shard ${{ matrix.shard }} --shards ${{ inputs.shards }} ${{ inputs.draft_args }}
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: llm-${{ env.RUN }}-${{ matrix.shard }}
+          path: |
+            runs/llm/
+            server.log
+            gateway.log
+          retention-days: 30
+
+  merge:
+    needs: run
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -e .
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: llm-${{ env.RUN }}-*
+          path: shards
+      - name: Merge
+        run: |
+          mkdir -p "runs/llm/$RUN"
+          find shards -path "*/runs/llm/$RUN/*.jsonl" -exec cp {} "runs/llm/$RUN/" \;
+          first-reply llm-merge --name "$RUN" | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: run-${{ env.RUN }}
+          path: runs/llm/${{ env.RUN }}/merged.jsonl
+          retention-days: 90
