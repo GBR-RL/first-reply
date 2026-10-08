@@ -152,11 +152,12 @@ def retrieval_eval(
     split: Annotated[
         list[str] | None, typer.Option(help="Question splits (default: test).")
     ] = None,
+    reranker: str | None = typer.Option(None, help="Cross-encoder to rerank the top 20."),
 ) -> None:
     """Score document retrieval on the answerable TechQA questions."""
     from first_reply.kb.evaluate import evaluate
 
-    s = evaluate(chunker, mode, model, splits=tuple(split or ["test"]))
+    s = evaluate(chunker, mode, model, splits=tuple(split or ["test"]), reranker=reranker)
     lo, hi = s["ndcg@10_ci"]
     typer.echo(
         f"{s['run']}: recall@5 {s['recall@5']:.3f}  nDCG@10 {s['ndcg@10']:.3f} "
