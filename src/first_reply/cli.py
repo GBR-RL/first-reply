@@ -32,6 +32,14 @@ def data() -> None:
     )
 
 
+@app.command("data-card")
+def data_card() -> None:
+    """Regenerate docs/data.md from the prepared datasets."""
+    from first_reply.data import card
+
+    typer.echo(f"wrote {card.write()}")
+
+
 @app.command()
 def version() -> None:
     """Print the package version."""
