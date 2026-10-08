@@ -22,13 +22,32 @@ def data() -> None:
     paths = download.fetch_all()
     typer.echo(f"downloaded {len(paths)} files")
     df = tickets.build()
-    counts = df.groupby(["split", "language"]).size().unstack(fill_value=0)
+    counts = df.groupby(["split", "lang"]).size().unstack(fill_value=0)
     typer.echo(f"tickets: {len(df)} unique\n{counts}")
     docs, questions, responses = techqa.build()
     answerable = questions.groupby("split").answerable.agg(["size", "sum"])
     typer.echo(
         f"knowledge base: {len(docs)} documents, {len(responses)} reference responses\n"
         f"questions (size, answerable):\n{answerable}"
+    )
+
+
+@app.command("families")
+def families_cmd(
+    threshold: float = typer.Option(0.90, help="Cosine similarity that links two tickets."),
+) -> None:
+    """Group tickets into paraphrase families from cached bge-m3 embeddings."""
+    from first_reply import embed
+    from first_reply.data import families, tickets
+
+    df = tickets.clean(tickets.load_raw())
+    out = families.assign(
+        df.id.tolist(), embed.load("bge-m3", "tickets", df.id.tolist()), threshold
+    )
+    out.to_csv(families.ASSET, index=False, compression={"method": "gzip", "mtime": 0})
+    sizes = out.family.value_counts()
+    typer.echo(
+        f"{len(sizes)} families, {int((sizes == 1).sum())} singletons, largest {sizes.max()}"
     )
 
 
