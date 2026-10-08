@@ -41,8 +41,8 @@ flowchart LR
   support documents, filtered inside the search by the caller's role. The model writes a reply
   that cites excerpt numbers, or declines when the excerpts don't contain the answer.
 - **Review.** The reviewer sees the email (personal data masked), the routing, the draft and the
-  excerpts it cites, and approves, edits or rejects. The decision resumes the waiting n8n
-  execution, which sends the reply. Every proposal and decision is logged.
+  excerpts it cites, and approves, edits or rejects. Each email runs as its own n8n execution
+  that waits for that decision and then sends the reply. Every proposal and decision is logged.
 - **Operations.** All model calls go through the LiteLLM gateway (aliases, fallback to Granite,
   per-key rate limits and budgets, spend log). Each pipeline step is a span in Phoenix.
 
@@ -203,7 +203,7 @@ src/first_reply/
   eval/       metrics, sharded LLM runs, reports, charts
   service/    pipeline, FastAPI app, review page, audit log, PII masking, smoke test, demo
 gateway/      LiteLLM configuration
-workflows/    n8n workflow and demo mailbox credentials
+workflows/    n8n workflows (inbox, one case per email) and demo mailbox credentials
 docs/         data card, results, charts
 ```
 
