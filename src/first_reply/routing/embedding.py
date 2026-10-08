@@ -29,7 +29,7 @@ class EmbeddingLRRouter:
         self.models: dict[str, LogisticRegression] = {}
         self.tagger: OneVsRestClassifier | None = None
 
-    def fit(self, train: pd.DataFrame, tags: list[str]) -> None:
+    def fit(self, train: pd.DataFrame, tags: list[str], dev: pd.DataFrame | None = None) -> None:
         x = _vectors(train, self.model_key)
         for target in TARGETS:
             model = LogisticRegression(max_iter=3000, C=self.c, class_weight="balanced")
@@ -64,7 +64,7 @@ class KnnRouter:
         self.x: NDArray[np.float32] | None = None
         self.tags: list[str] = []
 
-    def fit(self, train: pd.DataFrame, tags: list[str]) -> None:
+    def fit(self, train: pd.DataFrame, tags: list[str], dev: pd.DataFrame | None = None) -> None:
         self.train = train.reset_index(drop=True)
         self.x = _vectors(train, self.model_key)
         self.tags = tags

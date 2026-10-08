@@ -1,0 +1,60 @@
+name: Routing run
+
+# Runs one routing method end to end on a CPU runner (e.g. the encoder fine-tune, which
+# takes hours on CPU) and uploads the report and test predictions as an artifact.
+on:
+  workflow_dispatch:
+    inputs:
+      method:
+        description: Routing method (see `first-reply route --help`)
+        required: true
+        default: e5-small_ft
+      embeddings_run:
+        description: Optional Embeddings run id whose merged vectors this method needs
+        required: false
+        default: ""
+
+jobs:
+  route:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install
+        run: |
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -e ".[ml]"
+      - uses: actions/cache@v4
+        with:
+          path: data/raw
+          key: raw-data-v1-${{ hashFiles('src/first_reply/data/download.py') }}
+      - name: Prepare data
+        run: first-reply data
+      - name: Fetch embeddings
+        if: inputs.embeddings_run != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p data/cache/embeddings/tmp
+          gh run download ${{ inputs.embeddings_run }} --pattern 'embeddings-*' --dir data/cache/embeddings/tmp
+          for d in data/cache/embeddings/tmp/embeddings-*; do
+            model=$(basename "$d" | cut -d- -f2-3 | sed 's/-tickets$//')
+            mkdir -p "data/cache/embeddings/$model" && cp "$d"/*.npz "data/cache/embeddings/$model/"
+          done
+      - name: Run
+        run: first-reply route --method ${{ inputs.method }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: routing-${{ inputs.method }}
+          path: |
+            docs/results/routing/${{ inputs.method }}.json
+            runs/routing/${{ inputs.method }}/
+          retention-days: 30

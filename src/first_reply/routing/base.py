@@ -39,7 +39,9 @@ class Prediction:
 class Router(Protocol):
     name: str
 
-    def fit(self, train: pd.DataFrame, tags: list[str]) -> None: ...
+    def fit(
+        self, train: pd.DataFrame, tags: list[str], dev: pd.DataFrame | None = None
+    ) -> None: ...
 
     def predict(self, df: pd.DataFrame) -> Prediction: ...
 
@@ -81,7 +83,7 @@ def evaluate(
     train, dev, test = (df[df.split == s] for s in ("train", "dev", "test"))
     vocab = tag_vocab(train, tag_min_count)
     t0 = time.perf_counter()
-    router.fit(train, vocab)
+    router.fit(train, vocab, dev)
     fit_s = time.perf_counter() - t0
     t0 = time.perf_counter()
     p_dev, p_test = router.predict(dev), router.predict(test)

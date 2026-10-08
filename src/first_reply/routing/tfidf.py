@@ -27,7 +27,7 @@ class TfidfRouter:
     def _features(self, df: pd.DataFrame) -> csr_matrix:
         return csr_matrix(self.vectorizer.transform(df.text))
 
-    def fit(self, train: pd.DataFrame, tags: list[str]) -> None:
+    def fit(self, train: pd.DataFrame, tags: list[str], dev: pd.DataFrame | None = None) -> None:
         x = csr_matrix(self.vectorizer.fit_transform(train.text))
         for target in TARGETS:
             model = LogisticRegression(max_iter=2000, C=self.c, class_weight="balanced")
