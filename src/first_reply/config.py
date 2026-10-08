@@ -14,5 +14,6 @@ RUNS = Path(os.environ.get("FIRST_REPLY_RUNS", ROOT / "runs"))
 TICKETS = PROCESSED / "tickets.parquet"
 KB_DOCS = PROCESSED / "kb_docs.parquet"
 KB_QUESTIONS = PROCESSED / "kb_questions.parquet"
+KB_RESPONSES = PROCESSED / "kb_responses.parquet"
 
 SEED = 13
