@@ -1,87 +1,89 @@
 {
-  "method": "tfidf_lr",
-  "fit_seconds": 82.9,
-  "predict_ms_per_ticket": 0.107,
+  "method": "bge-m3_knn",
+  "fit_seconds": 0.3,
+  "predict_ms_per_ticket": 0.398,
   "targets": {
     "queue": {
       "n": 8032,
-      "macro_f1": 0.2824,
+      "macro_f1": 0.3304,
       "macro_f1_ci": [
-        0.2687,
-        0.2948
+        0.3149,
+        0.3454
       ],
-      "accuracy": 0.3425,
+      "accuracy": 0.4183,
       "accuracy_ci": [
-        0.332,
-        0.3527
+        0.4072,
+        0.4297
       ],
       "by_group": {
         "de": {
           "n": 2448,
-          "macro_f1": 0.2614
+          "macro_f1": 0.3837
         },
         "en": {
           "n": 5584,
-          "macro_f1": 0.2889
+          "macro_f1": 0.3046
         }
       }
     },
     "priority": {
       "n": 8032,
-      "macro_f1": 0.4131,
+      "macro_f1": 0.4662,
       "macro_f1_ci": [
-        0.402,
-        0.423
+        0.4539,
+        0.4779
       ],
-      "accuracy": 0.4406,
+      "accuracy": 0.5151,
       "accuracy_ci": [
-        0.4292,
-        0.4507
+        0.5042,
+        0.5263
       ],
       "by_group": {
         "de": {
           "n": 2448,
-          "macro_f1": 0.414
+          "macro_f1": 0.5125
         },
         "en": {
           "n": 5584,
-          "macro_f1": 0.4127
+          "macro_f1": 0.4455
         }
       }
     },
     "type": {
       "n": 8032,
-      "macro_f1": 0.7833,
+      "macro_f1": 0.7694,
       "macro_f1_ci": [
-        0.7748,
-        0.7916
+        0.7607,
+        0.7779
       ],
-      "accuracy": 0.7545,
+      "accuracy": 0.7745,
       "accuracy_ci": [
-        0.7453,
-        0.7638
+        0.7661,
+        0.7837
       ],
       "by_group": {
         "de": {
           "n": 2448,
-          "macro_f1": 0.7737
+          "macro_f1": 0.8034
         },
         "en": {
           "n": 5584,
-          "macro_f1": 0.7867
+          "macro_f1": 0.754
         }
       }
     }
   },
   "tags": {
     "vocab_size": 33,
-    "threshold_from_dev": 0.3153,
+    "threshold_from_dev": 0.3533,
     "n": 8032,
-    "micro_f1": 0.7222,
+    "micro_f1": 0.6839,
     "micro_f1_ci": [
-      0.7179,
-      0.7259
+      0.6783,
+      0.6891
     ],
-    "macro_f1": 0.607
-  }
+    "macro_f1": 0.5534
+  },
+  "k": 25,
+  "temperature": 0.05
 }

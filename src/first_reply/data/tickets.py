@@ -1,8 +1,10 @@
-"""Ticket set: merge the two labelled releases, remove duplicates, split.
+"""Ticket set: merge the two labelled releases, remove duplicates, split by family.
 
 Duplicates are removed on the normalised body *before* splitting. v5 repeats 8,399 v4
 tickets verbatim with identical labels, so a split taken before de-duplication would put the
-same ticket in train and test and inflate every routing score.
+same ticket in train and test and inflate every routing score. Paraphrases of the same seed
+ticket are kept together as well (see `families.py`): the split is drawn over families, not
+tickets.
 """
 
 from __future__ import annotations
@@ -14,9 +16,10 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import StratifiedGroupKFold, train_test_split
 
 from first_reply.config import RAW, SEED, TICKETS
+from first_reply.data import families, language
 
 LABELS = ("queue", "priority", "type")
 TAG_COLUMNS = tuple(f"tag_{i}" for i in range(1, 9))
@@ -62,26 +65,50 @@ def clean(df: pd.DataFrame, dedupe: bool = True) -> pd.DataFrame:
     else:
         df["id"] = [f"{ticket_id(b)}-{i}" for i, b in enumerate(df.body)]
     df["text"] = np.where(df.subject.str.len() > 0, df.subject + "\n\n" + df.body, df.body)
-    cols = ["id", "release", "language", "subject", "body", "text", "answer", *LABELS, "tags"]
+    # The dataset's language column is wrong for ~27% of German-labelled tickets.
+    df["lang"] = df.text.map(language.detect)
+    cols = [
+        "id", "release", "language", "lang", "subject", "body", "text", "answer", *LABELS, "tags"
+    ]  # fmt: skip
     return df[cols].reset_index(drop=True)
 
 
 def _strata(df: pd.DataFrame) -> pd.Series:
-    return df.queue + "|" + df.language
+    return df.queue + "|" + df.lang
+
+
+def _group_split(
+    index: pd.Index, strata: pd.Series, groups: pd.Series, n_splits: int, seed: int
+) -> tuple[pd.Index, pd.Index]:
+    """One fold of a stratified group k-fold: (rest, held_out)."""
+    folds = StratifiedGroupKFold(n_splits=n_splits, shuffle=True, random_state=seed)
+    rest, held = next(folds.split(np.zeros(len(index)), strata, groups))
+    return index[rest], index[held]
 
 
 def assign_splits(
-    df: pd.DataFrame, seed: int = SEED, llm_subset: dict[str, int] | None = None
+    df: pd.DataFrame,
+    seed: int = SEED,
+    llm_subset: dict[str, int] | None = None,
+    groups: pd.Series | None = None,
 ) -> pd.DataFrame:
-    """70/10/20 split stratified on queue x language, plus fixed LLM subsets."""
+    """70/10/20 split stratified on queue x detected language, plus fixed LLM subsets.
+
+    With `groups` (paraphrase families), every group lands in exactly one split.
+    """
     df = df.copy()
-    rest, test = train_test_split(
-        df.index, test_size=SPLIT_SIZES["test"], random_state=seed, stratify=_strata(df)
-    )
-    dev_share = SPLIT_SIZES["dev"] / (1 - SPLIT_SIZES["test"])
-    train, dev = train_test_split(
-        rest, test_size=dev_share, random_state=seed, stratify=_strata(df.loc[rest])
-    )
+    if groups is None:
+        rest, test = train_test_split(
+            df.index, test_size=SPLIT_SIZES["test"], random_state=seed, stratify=_strata(df)
+        )
+        dev_share = SPLIT_SIZES["dev"] / (1 - SPLIT_SIZES["test"])
+        train, dev = train_test_split(
+            rest, test_size=dev_share, random_state=seed, stratify=_strata(df.loc[rest])
+        )
+    else:
+        g = groups.loc[df.index]
+        rest, test = _group_split(df.index, _strata(df), g, 5, seed)
+        train, dev = _group_split(rest, _strata(df.loc[rest]), g.loc[rest], 8, seed)
     df["split"] = ""
     df.loc[train, "split"] = "train"
     df.loc[dev, "split"] = "dev"
@@ -96,8 +123,19 @@ def assign_splits(
     return df
 
 
+def family_groups(df: pd.DataFrame, path: Path = families.ASSET) -> pd.Series:
+    fam = families.load(path).set_index("id").family
+    missing = ~df.id.isin(fam.index)
+    if missing.any():
+        raise KeyError(f"{int(missing.sum())} tickets have no family; rerun `first-reply families`")
+    return pd.Series(fam.loc[df.id].to_numpy(), index=df.index, name="family")
+
+
 def build(raw: Path = RAW, out: Path = TICKETS, seed: int = SEED) -> pd.DataFrame:
-    df = assign_splits(clean(load_raw(raw)), seed)
+    df = clean(load_raw(raw))
+    groups = family_groups(df)
+    df = assign_splits(df, seed, groups=groups)
+    df["family"] = groups
     out.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(out, index=False)
     return df

@@ -1,14 +1,66 @@
 {
-  "test_tickets_also_in_train": 2336,
-  "test_size": 9715,
-  "macro_f1_with_duplicates": {
-    "queue": 0.6441,
-    "priority": 0.6928,
-    "type": 0.8827
+  "random, with exact duplicates": {
+    "test_size": 9715,
+    "tfidf_lr": {
+      "queue": 0.6434,
+      "priority": 0.6942,
+      "type": 0.8844
+    }
   },
-  "macro_f1_deduplicated": {
-    "queue": 0.5396,
-    "priority": 0.5873,
-    "type": 0.8578
+  "random, de-duplicated": {
+    "test_size": 8032,
+    "tfidf_lr": {
+      "queue": 0.5234,
+      "priority": 0.5881,
+      "type": 0.852
+    },
+    "bge-m3_knn": {
+      "queue": 0.7179,
+      "priority": 0.7728,
+      "type": 0.9002
+    },
+    "test_with_train_twin_ge_0.95": 0.4069
+  },
+  "families at cosine 0.95": {
+    "test_size": 8032,
+    "tfidf_lr": {
+      "queue": 0.3434,
+      "priority": 0.4522,
+      "type": 0.8051
+    },
+    "bge-m3_knn": {
+      "queue": 0.5045,
+      "priority": 0.5821,
+      "type": 0.8431
+    },
+    "test_with_train_twin_ge_0.95": 0.0
+  },
+  "families at cosine 0.93": {
+    "test_size": 8032,
+    "tfidf_lr": {
+      "queue": 0.3162,
+      "priority": 0.425,
+      "type": 0.7979
+    },
+    "bge-m3_knn": {
+      "queue": 0.4358,
+      "priority": 0.5236,
+      "type": 0.8042
+    },
+    "test_with_train_twin_ge_0.95": 0.0
+  },
+  "families at cosine 0.90": {
+    "test_size": 8033,
+    "tfidf_lr": {
+      "queue": 0.2884,
+      "priority": 0.3994,
+      "type": 0.7846
+    },
+    "bge-m3_knn": {
+      "queue": 0.3416,
+      "priority": 0.4576,
+      "type": 0.7843
+    },
+    "test_with_train_twin_ge_0.95": 0.0
   }
 }

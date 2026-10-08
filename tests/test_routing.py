@@ -28,7 +28,7 @@ def _tickets(n: int = 600) -> pd.DataFrame:
         rows.append(
             {
                 "id": f"t{i}",
-                "language": "en" if i % 2 else "de",
+                "lang": "en" if i % 2 else "de",
                 "text": text,
                 "queue": q,
                 "priority": ["low", "medium", "high"][i % 3],
