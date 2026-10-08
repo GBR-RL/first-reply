@@ -15,6 +15,18 @@ def main() -> None:
 
 
 @app.command()
+def data() -> None:
+    """Download the pinned datasets and prepare the ticket set."""
+    from first_reply.data import download, tickets
+
+    paths = download.fetch_all()
+    typer.echo(f"downloaded {len(paths)} files")
+    df = tickets.build()
+    counts = df.groupby(["split", "language"]).size().unstack(fill_value=0)
+    typer.echo(f"tickets: {len(df)} unique\n{counts}")
+
+
+@app.command()
 def version() -> None:
     """Print the package version."""
     typer.echo(__version__)
