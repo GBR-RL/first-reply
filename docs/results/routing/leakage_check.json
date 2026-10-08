@@ -1,0 +1,14 @@
+{
+  "test_tickets_also_in_train": 2336,
+  "test_size": 9715,
+  "macro_f1_with_duplicates": {
+    "queue": 0.6441,
+    "priority": 0.6928,
+    "type": 0.8827
+  },
+  "macro_f1_deduplicated": {
+    "queue": 0.5396,
+    "priority": 0.5873,
+    "type": 0.8578
+  }
+}
