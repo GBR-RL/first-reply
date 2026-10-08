@@ -29,6 +29,9 @@ LATENCY = Histogram(
 )
 
 
+RESUME_ATTEMPTS = 30
+
+
 class Runner(Protocol):
     def run(
         self, subject: str, body: str, role: str = "customer"
@@ -107,19 +110,18 @@ def create_app(pipeline: Runner, store: Store, http: httpx.Client | None = None)
         reply = d.reply if d.action == "edit" else proposal["draft"]["reply"]
         resumed = False
         if found["resume_url"]:
-            client.post(
-                found["resume_url"],
-                json={
-                    "case_id": case_id,
-                    "action": d.action,
-                    "send": d.action in ("approve", "edit") and bool(reply),
-                    "to": found["sender"],
-                    "subject": f"Re: {found['subject']}",
-                    "reply": reply,
-                    "queue": d.queue or proposal["gate"]["queue"],
-                },
-            ).raise_for_status()
-            resumed = True
+            payload = {
+                "case_id": case_id,
+                "action": d.action,
+                "send": d.action in ("approve", "edit") and bool(reply),
+                "to": found["sender"],
+                "subject": f"Re: {found['subject']}",
+                "reply": reply,
+                "queue": d.queue or proposal["gate"]["queue"],
+            }
+            resumed = resume(client, found["resume_url"], payload)
+            if not resumed:
+                raise HTTPException(502, "decision recorded, but the workflow could not be resumed")
         return {"case_id": case_id, "status": status, "workflow_resumed": resumed}
 
     @app.post("/cases/{case_id}/sent")
@@ -140,6 +142,28 @@ def create_app(pipeline: Runner, store: Store, http: httpx.Client | None = None)
         return PAGE
 
     return app
+
+
+def resume(
+    client: httpx.Client,
+    url: str,
+    payload: dict[str, Any],
+    attempts: int = RESUME_ATTEMPTS,
+    wait_s: float = 2.0,
+) -> bool:
+    """Resume the waiting n8n execution.
+
+    The case exists as soon as /triage returns, which is a moment before n8n's execution reaches
+    its Wait node; a reviewer who decides in that moment gets 409 from n8n. Retry for a while.
+    """
+    for attempt in range(attempts):
+        r = client.post(url, json=payload)
+        if r.is_success:
+            return True
+        if r.status_code not in (404, 409) or attempt == attempts - 1:
+            return False
+        time.sleep(wait_s)
+    return False
 
 
 def setup_tracing(service: str = "first-reply") -> None:
