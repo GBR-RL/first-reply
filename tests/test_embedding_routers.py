@@ -26,7 +26,7 @@ def _tickets(n: int = 600) -> pd.DataFrame:
     return pd.DataFrame(
         {
             "id": [f"t{i}" for i in range(n)],
-            "language": ["en", "de"] * (n // 2),
+            "lang": ["en", "de"] * (n // 2),
             "queue": [queues[i % 3] for i in range(n)],
             "priority": ["low", "high"] * (n // 2),
             "type": ["Incident", "Request"] * (n // 2),

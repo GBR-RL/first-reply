@@ -82,6 +82,7 @@ def test_prepared_ticket_set() -> None:
     assert df.id.is_unique
     assert df.body.map(tickets.normalize).is_unique
     assert set(df.split) == {"train", "dev", "test"}
-    assert set(df.language) == {"en", "de"}
+    assert set(df.lang) == {"en", "de"}
     assert df.queue.nunique() == 10
+    assert df.groupby("family").split.nunique().max() == 1
     assert set(df.priority) == {"low", "medium", "high"}
