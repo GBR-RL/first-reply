@@ -285,6 +285,15 @@ def reports() -> None:
     typer.echo(f"reports written for {len(runs)} runs")
 
 
+@app.command()
+def charts() -> None:
+    """Render the README charts (light and dark) from docs/results."""
+    from first_reply.eval import charts as ch
+
+    for path in ch.all_charts():
+        typer.echo(f"wrote {path}")
+
+
 @app.command("model-url")
 def model_url(name: str) -> None:
     """Download URL of a GGUF model."""
