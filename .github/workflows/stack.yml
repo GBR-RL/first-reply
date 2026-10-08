@@ -5,6 +5,11 @@ name: Stack
 # goes in over IMAP, a reviewer approves, the reply comes out over SMTP.
 on:
   workflow_dispatch:
+    inputs:
+      record_demo:
+        description: Also record docs/assets/demo.gif with a headless browser
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths: ["compose.yaml", "Dockerfile", "docker/**", "workflows/**", "gateway/**",
@@ -58,6 +63,17 @@ jobs:
         run: docker compose up --build --detach --wait --wait-timeout 1500
       - name: Smoke test
         run: python -m first_reply.service.smoke
+      - name: Record the demo
+        if: inputs.record_demo
+        run: |
+          python -m pip install -e ".[demo]"
+          python -m playwright install --with-deps chromium
+          python -m first_reply.service.demo --out docs/assets/demo.gif
+      - if: inputs.record_demo
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo
+          path: docs/assets/demo.gif
       - if: failure()
         run: |
           docker compose ps
