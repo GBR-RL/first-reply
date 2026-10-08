@@ -275,7 +275,8 @@ def reports() -> None:
             r.triage_report(name, classical)
         elif name.startswith("draft"):
             model = name.removeprefix("draft-")
-            judged = f"judge-drafts-qwen3.5-4b-on-{model.split('-')[0]}-drafts"
+            family = "".join(ch for ch in model.split("-")[0] if ch.isalpha())
+            judged = f"judge-drafts-qwen3.5-4b-on-{family}-drafts"
             r.draft_report(name, judged if judged in runs else None)
         elif name.startswith("judge-ragbench"):
             r.judge_validation(name)
