@@ -12,45 +12,71 @@ not used as a knowledge source.
 
 The two labelled releases are merged (v5, then v4). v5 repeats 8,399 v4 tickets verbatim with
 identical labels, so duplicates are removed on the normalised body **before** splitting.
-Result: **40,158 unique tickets**, split 70/10/20 stratified on queue x language.
-Fixed stratified subsets of 300 dev and 1,000
-test tickets are used for the slower LLM runs.
+Result: **40,158 unique tickets**.
+
+### Paraphrase families
+
+The generator also wrote several rewordings and translations of each seed ticket. With a random
+split, 40% of test tickets have a training ticket with bge-m3 cosine similarity >= 0.95, and
+99% of those share the queue label, so a nearest-neighbour router looks far better than it is.
+Tickets are therefore grouped into families (connected components of pairs with similarity
+>= 0.90; pairs at 0.90 are still paraphrases or translations) and the split is drawn over
+families: **16,139 families**, 9,363 of them single tickets, the
+largest 1,989 tickets. The assignment ships as
+`src/first_reply/data/ticket_families.csv.gz` (`first-reply families` recomputes it).
+
+### Language
+
+The dataset's language column is unreliable: a quarter of the tickets labelled German are
+written in English. Language is detected from function words instead; results are reported by
+detected language.
+
+| labelled / detected | de | en |
+|---|---:|---:|
+| de | 12,240 | 4,276 |
+| en | 3 | 23,639 |
+
+### Splits
+
+70/10/20 over families, stratified on queue x detected language. Fixed stratified subsets of
+300 dev and 1,000 test tickets are used for the
+slower LLM runs.
 
 | split | de | en | total |
 |---|---:|---:|---:|
-| train | 11,562 | 16,548 | 28,110 |
-| dev | 1,652 | 2,364 | 4,016 |
-| test | 3,302 | 4,730 | 8,032 |
+| train | 8,570 | 19,540 | 28,110 |
+| dev | 1,225 | 2,791 | 4,016 |
+| test | 2,448 | 5,584 | 8,032 |
 
 ### Queues
 
 | queue | de | en | total |
 |---|---:|---:|---:|
-| Technical Support | 4,920 | 6,834 | 11,754 |
-| Product Support | 2,989 | 4,399 | 7,388 |
-| Customer Service | 2,539 | 3,553 | 6,092 |
-| IT Support | 1,957 | 2,826 | 4,783 |
-| Billing and Payments | 1,607 | 2,409 | 4,016 |
-| Returns and Exchanges | 834 | 1,170 | 2,004 |
-| Service Outages and Maintenance | 632 | 935 | 1,567 |
-| Sales and Pre-Sales | 532 | 718 | 1,250 |
-| Human Resources | 288 | 458 | 746 |
-| General Inquiry | 218 | 340 | 558 |
+| Technical Support | 3,571 | 8,183 | 11,754 |
+| Product Support | 2,240 | 5,148 | 7,388 |
+| Customer Service | 1,929 | 4,163 | 6,092 |
+| IT Support | 1,427 | 3,356 | 4,783 |
+| Billing and Payments | 1,200 | 2,816 | 4,016 |
+| Returns and Exchanges | 599 | 1,405 | 2,004 |
+| Service Outages and Maintenance | 467 | 1,100 | 1,567 |
+| Sales and Pre-Sales | 424 | 826 | 1,250 |
+| Human Resources | 218 | 528 | 746 |
+| General Inquiry | 168 | 390 | 558 |
 
 ### Priority and type
 
 | priority | de | en | total |
 |---|---:|---:|---:|
-| medium | 6,596 | 9,709 | 16,305 |
-| high | 6,553 | 9,116 | 15,669 |
-| low | 3,367 | 4,817 | 8,184 |
+| medium | 4,871 | 11,434 | 16,305 |
+| high | 4,851 | 10,818 | 15,669 |
+| low | 2,521 | 5,663 | 8,184 |
 
 | type | de | en | total |
 |---|---:|---:|---:|
-| Incident | 6,713 | 9,398 | 16,111 |
-| Request | 4,730 | 6,845 | 11,575 |
-| Problem | 3,483 | 4,909 | 8,392 |
-| Change | 1,590 | 2,490 | 4,080 |
+| Incident | 4,713 | 11,398 | 16,111 |
+| Request | 3,807 | 7,768 | 11,575 |
+| Problem | 2,466 | 5,926 | 8,392 |
+| Change | 1,257 | 2,823 | 4,080 |
 
 ## Knowledge base
 
