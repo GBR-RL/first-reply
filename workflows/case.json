@@ -1,0 +1,192 @@
+{
+  "id": "firstReplyCase",
+  "name": "Service desk case",
+  "nodes": [
+    {
+      "id": "6f1a1d1e-0010-4c6e-9a01-000000000010",
+      "name": "One email",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "6f1a1d1e-0002-4c6e-9a01-000000000002",
+      "name": "Triage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SERVICE_URL }}/triage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ subject: $json.subject || '', body: $json.textPlain || $json.textHtml || '', sender: $json.from || '', resume_url: $execution.resumeUrl }) }}",
+        "options": {
+          "timeout": 900000
+        }
+      }
+    },
+    {
+      "id": "6f1a1d1e-0003-4c6e-9a01-000000000003",
+      "name": "Wait for reviewer",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        0
+      ],
+      "webhookId": "5d0c7a7e-3f0e-4b1a-9c1f-6a4f1c2b0a11",
+      "parameters": {
+        "resume": "webhook",
+        "httpMethod": "POST",
+        "options": {}
+      }
+    },
+    {
+      "id": "6f1a1d1e-0004-4c6e-9a01-000000000004",
+      "name": "Approved?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "c1b4f1e2-9d3a-4a7e-8f61-2b9d0e1f3a01",
+              "leftValue": "={{ $json.body.send }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "6f1a1d1e-0005-4c6e-9a01-000000000005",
+      "name": "Send reply",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        960,
+        -100
+      ],
+      "parameters": {
+        "fromEmail": "support@first-reply.test",
+        "toEmail": "={{ $json.body.to }}",
+        "subject": "={{ $json.body.subject }}",
+        "emailFormat": "text",
+        "text": "={{ $json.body.reply }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "smtp": {
+          "id": "smtpSupport",
+          "name": "Support mailbox (SMTP)"
+        }
+      }
+    },
+    {
+      "id": "6f1a1d1e-0006-4c6e-9a01-000000000006",
+      "name": "Mark sent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1200,
+        -100
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SERVICE_URL }}/cases/{{ $('Wait for reviewer').item.json.body.case_id }}/sent",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "One email": {
+      "main": [
+        [
+          {
+            "node": "Triage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Triage": {
+      "main": [
+        [
+          {
+            "node": "Wait for reviewer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for reviewer": {
+      "main": [
+        [
+          {
+            "node": "Approved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approved?": {
+      "main": [
+        [
+          {
+            "node": "Send reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Send reply": {
+      "main": [
+        [
+          {
+            "node": "Mark sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "active": false
+}
