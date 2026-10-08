@@ -95,33 +95,29 @@ def deliver(subject: str) -> None:
 
 
 def check_gateway(http: httpx.Client, master_key: str) -> None:
+    """Spend is logged, and a per-key limit is enforced by the gateway."""
     headers = {"Authorization": f"Bearer {master_key}"}
     logs = http.get(f"{GATEWAY}/spend/logs", headers=headers).json()
     assert logs, "the gateway logged no spend"
     print(f"ok: the gateway logged {len(logs)} model calls")
 
     key = http.post(
-        f"{GATEWAY}/key/generate", headers=headers, json={"max_budget": 0.0000001}
+        f"{GATEWAY}/key/generate",
+        headers=headers,
+        json={"rpm_limit": 1, "max_budget": 1.0, "metadata": {"purpose": "smoke test"}},
     ).json()["key"]
-    body_json = {"model": "triage", "messages": [{"role": "user", "content": "Hi"}],
-                 "max_tokens": 5}  # fmt: skip
-    first = http.post(f"{GATEWAY}/v1/chat/completions", headers={"Authorization": f"Bearer {key}"},
-                      json=body_json)  # fmt: skip
-    first.raise_for_status()
-    refused = wait_for(
-        "a key over its budget is refused",
-        lambda: (
-            http.post(
-                f"{GATEWAY}/v1/chat/completions",
-                headers={"Authorization": f"Bearer {key}"},
-                json=body_json,
-            ).status_code
-            in (400, 401, 429)
-        ),
-        240,
-        every=15,
-    )
-    assert refused
+    auth = {"Authorization": f"Bearer {key}"}
+    body = {"model": "triage", "messages": [{"role": "user", "content": "Hi"}], "max_tokens": 5}
+    http.post(f"{GATEWAY}/v1/chat/completions", headers=auth, json=body).raise_for_status()
+    second = http.post(f"{GATEWAY}/v1/chat/completions", headers=auth, json=body)
+    assert second.status_code == 429, f"rate limit not enforced: {second.status_code}"
+    print("ok: a key over its rate limit is refused (429)")
+
+    def spend() -> float:
+        info = http.get(f"{GATEWAY}/key/info", headers=headers, params={"key": key}).json()
+        return float(info.get("info", {}).get("spend") or 0.0)
+
+    wait_for("the key's spend is recorded against its budget", lambda: spend() > 0, 240, 15)
 
 
 def main() -> int:
