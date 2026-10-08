@@ -1,12 +1,13 @@
 FROM python:3.11-slim
 
-ENV PIP_NO_CACHE_DIR=1 PYTHONUNBUFFERED=1 HF_HOME=/models/hf
+ENV PIP_NO_CACHE_DIR=1 PYTHONUNBUFFERED=1 HF_HOME=/models/hf FIRST_REPLY_ROOT=/app
 WORKDIR /app
 
 RUN pip install torch --index-url https://download.pytorch.org/whl/cpu
 COPY pyproject.toml README.md LICENSE ./
 COPY src ./src
-RUN pip install ".[ml,service]"
+# Editable install: data and result paths resolve relative to /app.
+RUN pip install -e ".[ml,service]"
 
 # Data (prepared tickets, chunks, embedding cache) is mounted at /app/data.
 EXPOSE 8000
