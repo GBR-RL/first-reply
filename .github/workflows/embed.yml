@@ -57,7 +57,9 @@ jobs:
           path: ~/.cache/huggingface
           key: hf-${{ inputs.model }}-v1
       - name: Prepare data
-        run: first-reply data
+        run: |
+          first-reply data
+          first-reply kb-chunks
       - name: Encode shard
         run: >
           first-reply embed --model ${{ inputs.model }} --corpus ${{ inputs.corpus }}
