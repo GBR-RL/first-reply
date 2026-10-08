@@ -86,8 +86,8 @@ def evaluate(
         rows.append(row)
     ms = 1000 * (time.perf_counter() - t0) / max(len(q), 1)
     df = pd.DataFrame(rows)
-    if not suffix and tuple(splits) != ("test",):
-        suffix = "_" + "+".join(splits)
+    if tuple(splits) != ("test",):
+        suffix += "_" + "+".join(splits)
     if role:
         suffix += f"_role-{role}"
     name = run_name(chunker, mode, model, reranker, suffix)
