@@ -72,6 +72,33 @@ def leakage_check() -> None:
 
 
 @app.command()
+def embed(
+    model: str = typer.Option("e5-small", help="Embedding model key."),
+    corpus: str = typer.Option("tickets", help="Which texts to encode."),
+    shard: int = typer.Option(0, help="Shard index (for parallel CI jobs)."),
+    shards: int = typer.Option(1, help="Number of shards."),
+) -> None:
+    """Encode a corpus (or one shard of it) into the embedding cache."""
+    from first_reply import corpora
+    from first_reply import embed as emb
+
+    ids, texts, kind = corpora.load(corpus)
+    path = emb.compute(ids, texts, model, corpus, kind=kind, shard_index=shard, shard_count=shards)
+    typer.echo(f"wrote {path}")
+
+
+@app.command("embed-merge")
+def embed_merge(
+    model: str = typer.Option(..., help="Embedding model key."),
+    corpus: str = typer.Option(..., help="Corpus name."),
+) -> None:
+    """Merge shard files produced by parallel `embed` runs."""
+    from first_reply import embed as emb
+
+    typer.echo(f"wrote {emb.merge_shards(model, corpus)}")
+
+
+@app.command()
 def version() -> None:
     """Print the package version."""
     typer.echo(__version__)

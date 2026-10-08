@@ -20,6 +20,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# torch comes from the CPU wheel index: pip install torch --index-url https://download.pytorch.org/whl/cpu
+ml = ["sentence-transformers>=3", "transformers>=4.45"]
 plots = ["matplotlib>=3.8"]
 dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11", "pandas-stubs"]
 
