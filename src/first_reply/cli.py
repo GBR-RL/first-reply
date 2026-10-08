@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Annotated
+
 import typer
 
 from first_reply import __version__
@@ -115,6 +117,51 @@ def embed_merge(
     from first_reply import embed as emb
 
     typer.echo(f"wrote {emb.merge_shards(model, corpus)}")
+
+
+@app.command("kb-chunks")
+def kb_chunks() -> None:
+    """Cut the knowledge base into chunks with every chunker."""
+    from first_reply.data import techqa
+    from first_reply.kb import chunking
+    from first_reply.kb.index import chunks_path
+
+    docs = techqa.load_docs()
+    for name in chunking.CHUNKERS:
+        chunks = chunking.chunk_corpus(docs, name)
+        chunks.to_parquet(chunks_path(name), index=False)
+        typer.echo(f"{name}: {len(chunks)} chunks, median {chunks.words.median():.0f} words")
+
+
+@app.command("kb-index")
+def kb_index(
+    chunker: str = typer.Option("sections", help="Chunker whose chunks to index."),
+) -> None:
+    """Build the collection (BM25 + cached dense vectors) in the Qdrant server at QDRANT_URL."""
+    from first_reply.kb import index
+
+    n = index.build(chunker)
+    typer.echo(f"indexed {n} chunks; dense vectors: {index.dense_models(chunker) or 'none'}")
+
+
+@app.command("retrieval-eval")
+def retrieval_eval(
+    chunker: str = typer.Option("sections"),
+    mode: str = typer.Option("hybrid", help="bm25, dense or hybrid"),
+    model: str = typer.Option("e5-small", help="Dense embedding model."),
+    split: Annotated[
+        list[str] | None, typer.Option(help="Question splits (default: test).")
+    ] = None,
+) -> None:
+    """Score document retrieval on the answerable TechQA questions."""
+    from first_reply.kb.evaluate import evaluate
+
+    s = evaluate(chunker, mode, model, splits=tuple(split or ["test"]))
+    lo, hi = s["ndcg@10_ci"]
+    typer.echo(
+        f"{s['run']}: recall@5 {s['recall@5']:.3f}  nDCG@10 {s['ndcg@10']:.3f} "
+        f"[{lo:.3f}, {hi:.3f}]  MRR@10 {s['mrr@10']:.3f}  ({s['questions']} questions)"
+    )
 
 
 @app.command()
