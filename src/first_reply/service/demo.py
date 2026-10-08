@@ -46,7 +46,9 @@ def record(out: Path) -> Path:
     from playwright.sync_api import sync_playwright
 
     http = httpx.Client(timeout=60)
-    subject = "UDX compilation fails: argument list too long"
+    # Its own subject: the smoke test sends the same question first, and its reply must not be
+    # mistaken for the one approved here.
+    subject = "UDX compile error: argument list too long"
     deliver(subject)
     case = wait_for(
         "a pending case",
