@@ -66,7 +66,7 @@ def rounded(value: Any, digits: int = 4) -> Any:
 
 
 def _frame(df: pd.DataFrame, pred: Prediction) -> pd.DataFrame:
-    out = df[["id", "language", *TARGETS]].reset_index(drop=True).copy()
+    out = df[["id", "lang", *TARGETS]].reset_index(drop=True).copy()
     for target, p in pred.targets.items():
         out[f"{target}_pred"] = p.predict()
         out[f"{target}_proba"] = list(p.proba)
@@ -98,7 +98,7 @@ def evaluate(
     for target in TARGETS:
         if target in p_test.targets:
             report["targets"][target] = classification_report(
-                test[target].to_numpy(), p_test.targets[target].predict(), test.language.to_numpy()
+                test[target].to_numpy(), p_test.targets[target].predict(), test.lang.to_numpy()
             )
     if vocab and p_dev.tag_scores is not None and p_test.tag_scores is not None:
         threshold = best_threshold(tag_matrix(dev, vocab), p_dev.tag_scores)
