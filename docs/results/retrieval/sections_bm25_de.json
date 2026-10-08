@@ -1,0 +1,26 @@
+{
+  "run": "sections_bm25_de",
+  "chunker": "sections",
+  "mode": "bm25",
+  "model": null,
+  "reranker": null,
+  "splits": [
+    "test"
+  ],
+  "questions": 118,
+  "search_ms_per_query": 623.3991,
+  "recall@1": 0.414,
+  "recall@3": 0.5561,
+  "recall@5": 0.6205,
+  "recall@10": 0.7532,
+  "mrr@10": 0.5637,
+  "ndcg@10": 0.5937,
+  "recall@5_ci": [
+    0.5299,
+    0.6983
+  ],
+  "ndcg@10_ci": [
+    0.5142,
+    0.6633
+  ]
+}

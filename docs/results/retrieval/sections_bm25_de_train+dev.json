@@ -1,0 +1,27 @@
+{
+  "run": "sections_bm25_de_train+dev",
+  "chunker": "sections",
+  "mode": "bm25",
+  "model": null,
+  "reranker": null,
+  "splits": [
+    "train",
+    "dev"
+  ],
+  "questions": 662,
+  "search_ms_per_query": 624.8756,
+  "recall@1": 0.3888,
+  "recall@3": 0.5444,
+  "recall@5": 0.6247,
+  "recall@10": 0.7152,
+  "mrr@10": 0.5305,
+  "ndcg@10": 0.5628,
+  "recall@5_ci": [
+    0.5915,
+    0.6591
+  ],
+  "ndcg@10_ci": [
+    0.5319,
+    0.5915
+  ]
+}
