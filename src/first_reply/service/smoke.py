@@ -92,6 +92,18 @@ def deliver(subject: str) -> None:
         except TimeoutError:
             if attempt == 2:
                 raise
+            drop_unread()
+
+
+def drop_unread() -> None:
+    """Delete the unread email before resending, so the trigger never sees two at once."""
+    with imaplib.IMAP4(MAIL_HOST, 3143) as imap:
+        imap.login("support", "support")
+        imap.select("INBOX")
+        _, unseen = imap.search(None, "UNSEEN")
+        for num in unseen[0].split():
+            imap.store(num, "+FLAGS", r"\Deleted")
+        imap.expunge()
 
 
 def check_gateway(http: httpx.Client, master_key: str) -> None:

@@ -62,14 +62,19 @@ def _lines(d: dict[str, str]) -> str:
 
 
 def schema(tags: list[str]) -> type[BaseModel]:
-    queue = Enum("Queue", {f"q{i}": q for i, q in enumerate(QUEUES)})  # type: ignore[misc]
-    tag = Enum("Tag", {f"t{i}": t for i, t in enumerate(tags)})  # type: ignore[misc]
+    # The label sets are only known at run time, so the enums are built dynamically.
+    make: Any = Enum
+    queue = make("Queue", {f"q{i}": q for i, q in enumerate(QUEUES)})
+    tag = make("Tag", {f"t{i}": t for i, t in enumerate(tags)})
+    priority = make("Priority", {p: p for p in PRIORITIES})
+    ticket_type = make("TicketType", {t: t for t in TYPES})
+    tag_list: Any = list[tag]  # type: ignore[valid-type]
     model: type[BaseModel] = create_model(
         "Triage",
         queue=(queue, ...),
-        priority=(Enum("Priority", {p: p for p in PRIORITIES}), ...),
-        type=(Enum("TicketType", {t: t for t in TYPES}), ...),
-        tags=(list[tag], Field(max_length=6)),
+        priority=(priority, ...),
+        type=(ticket_type, ...),
+        tags=(tag_list, Field(max_length=6)),
         summary=(str, Field(max_length=300)),
         product=(str, Field(max_length=80)),
     )
