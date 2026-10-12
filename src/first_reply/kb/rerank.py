@@ -19,7 +19,9 @@ DEPTH = 20
 def _model(key: str) -> Any:
     from sentence_transformers import CrossEncoder
 
-    return CrossEncoder(RERANKERS[key], device="cpu", max_length=512)
+    from first_reply.device import pick_device
+
+    return CrossEncoder(RERANKERS[key], device=pick_device(), max_length=512)
 
 
 def rerank(query: str, hits: list[Hit], key: str, depth: int = DEPTH) -> list[Hit]:

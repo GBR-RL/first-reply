@@ -7,8 +7,11 @@ Service-desk triage with local LLMs. A support email (German or English) comes i
 is routed to a queue with a priority and type, answered from a support knowledge base with cited
 sources, and held for a person to approve. Nothing reaches a customer without that approval.
 
-Everything runs on CPU with open-weight models (Qwen3.5-4B, Granite 4.2 3B on llama.cpp) behind a
-LiteLLM gateway. No hosted model APIs.
+Open-weight models (Qwen3.5-4B, Granite 4.2 3B on llama.cpp) behind a LiteLLM gateway, and no
+hosted model APIs, so tickets never leave the company. It runs on the hardware a site has: an
+NVIDIA GPU (`compose.gpu.yaml` offloads the model to it, and the embedding and reranking models
+pick a GPU automatically) or plain CPUs. Every result below was measured on 4-core CPU runners,
+the slowest setting it supports.
 
 ![Demo: an email is triaged, reviewed and answered](docs/assets/demo.gif)
 
@@ -149,10 +152,11 @@ low. On the answers they give, both models stay close to their excerpts. The dif
 *when* they answer: Granite answers two thirds of the questions the knowledge base can't answer.
 The service uses Qwen.
 
-### Cost on CPU
+### Cost
 
 On a 4-vCPU runner, one ticket costs about 2,300 prompt and 125 output tokens for the draft plus
-1,200 and 90 for few-shot triage: roughly two minutes, almost all of it prompt processing. The
+1,200 and 90 for few-shot triage: roughly two minutes, almost all of it prompt processing, which
+is the part a GPU accelerates most. The
 gateway's internal chargeback rate (a unit for budgets, not a vendor price) puts 1,000 tickets
 at about 0.43.
 
@@ -162,7 +166,8 @@ Python 3.11, [uv](https://docs.astral.sh/uv/), and for the service a llama.cpp s
 
 ```bash
 uv venv && uv pip install -e ".[dev,service,ml,gateway]"
-uv pip install torch --index-url https://download.pytorch.org/whl/cpu
+uv pip install torch          # CUDA build on GPU machines; CPU only: add
+                              #   --index-url https://download.pytorch.org/whl/cpu
 
 first-reply data          # download (pinned, checksummed), de-duplicate, split by family
 first-reply kb-chunks     # cut the knowledge base into chunks
@@ -171,7 +176,7 @@ first-reply data-card     # docs/data.md
 first-reply route --method tfidf_lr        # routing baselines
 first-reply leakage-check                  # the five splits
 first-reply charts                         # README charts from docs/results
-first-reply embed --model bge-m3 --corpus tickets   # slow on CPU: see the Embeddings workflow
+first-reply embed --model bge-m3 --corpus tickets   # slow without a GPU: see the Embeddings workflow
 first-reply retrieval-eval --mode hybrid --model bge-m3
 ```
 
@@ -184,7 +189,8 @@ rebuilds every results file from their outputs.
 `models/model.gguf` (`first-reply model-url qwen3.5-4b`), then:
 
 ```bash
-docker compose up --build --wait
+docker compose up --build --wait                                   # CPU
+docker compose -f compose.yaml -f compose.gpu.yaml up --build --wait  # NVIDIA GPU
 python -m first_reply.service.smoke    # email in, approval, reply out
 ```
 
