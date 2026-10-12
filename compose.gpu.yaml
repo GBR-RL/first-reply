@@ -1,0 +1,16 @@
+# The same stack with the language model on an NVIDIA GPU:
+#   docker compose -f compose.yaml -f compose.gpu.yaml up
+# Needs the NVIDIA Container Toolkit. -ngl 99 offloads every layer to the GPU.
+services:
+  llama:
+    build:
+      dockerfile: docker/llama-cuda.Dockerfile
+    command: >-
+      -m /models/model.gguf --jinja -c 8192 -np 1 --host 0.0.0.0 --port 8081 -ngl 99
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
