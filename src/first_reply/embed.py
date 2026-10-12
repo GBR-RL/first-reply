@@ -40,7 +40,9 @@ MODELS = {
 def _load(model: EmbeddingModel):  # type: ignore[no-untyped-def]
     from sentence_transformers import SentenceTransformer
 
-    st = SentenceTransformer(model.hf_name, device="cpu")
+    from first_reply.device import pick_device
+
+    st = SentenceTransformer(model.hf_name, device=pick_device())
     st.max_seq_length = model.max_seq_length
     return st
 
